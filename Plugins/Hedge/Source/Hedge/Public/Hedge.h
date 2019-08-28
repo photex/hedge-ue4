@@ -33,11 +33,11 @@ class UHedgeMeshBuilder;
 class UHedgeElementLoopBuilder;
 
 // Common container aliases
-using FFaceArray = TArray<FFace>;
-using FFaceTriangleArray = TArray<FFaceTriangle>;
-using FHalfEdgeArray = TArray<FHalfEdge>;
-using FVertexArray = TArray<FVertex>;
-using FPointArray = TArray<FPoint>;
+using FHedgeFaceArray = TArray<FFace>;
+using FHedgeFaceTriangleArray = TArray<FFaceTriangle>;
+using FHedgeHalfEdgeArray = TArray<FHalfEdge>;
+using FHedgeVertexArray = TArray<FVertex>;
+using FHedgePointArray = TArray<FPoint>;
 
 using FEdgeIndexSet = TSet<FEdgeIndex>;
 using FFaceIndexSet = TSet<FFaceIndex>;
@@ -172,7 +172,7 @@ struct FFaceIndex : public FElementIndex
     return GetTypeHash(Other.OffsetVal);
   }
 
-  HEDGE_API static FFaceIndex Invalid;
+  HEDGE_API static const FFaceIndex Invalid;
 };
 
 
@@ -186,7 +186,7 @@ struct FVertexIndex : public FElementIndex
     return GetTypeHash(Other.OffsetVal);
   }
 
-  HEDGE_API static FVertexIndex Invalid;
+  HEDGE_API static const FVertexIndex Invalid;
 };
 
 
@@ -204,6 +204,7 @@ struct FPointIndex : public FElementIndex
 };
 
 //////////////////////////////////////////////////////////////
+/// Principle structures to encode/define a mesh
 
 UENUM()
 enum class EMeshElementStatus : uint16
@@ -266,7 +267,7 @@ struct FFace : public FMeshElement
   FEdgeIndex RootEdgeIndex;
   /// A list of the triangles that compose this face.
   /// (Perhaps empty when the face itself is already a triangle)
-  FFaceTriangleArray Triangles;
+  FHedgeFaceTriangleArray Triangles;
 };
 
 /**
@@ -301,14 +302,93 @@ struct FVertex : public FMeshElement
  * Points are the structure which holds the common
  * vertex attribute 'position'.
  * Multiple vertices may be associated with a point.
+ * @todo There needs to be a general attribute system in place.
  */
 USTRUCT(BlueprintType)
 struct FPoint : public FMeshElement
 {
   GENERATED_BODY()
+  /// The location of this point.
+  FPosition Position;
+  /// The associated vertices
+  FHedgeVertexArray Vertices;
 };
 
 //////////////////////////////////////////////////////////////
+/// The mesh kernel contains element buffers and provides
+/// the fundamental utilities. It's meant to be low level and
+/// is probably not fun to use.
+
+UCLASS()
+class UHedgeKernel final : public UObject
+{
+  GENERATED_BODY()
+
+  FHalfEdge* Get(FEdgeIndex Index);
+  FFace* Get(FFaceIndex Index);
+  FVertex* Get(FVertexIndex Index);
+  FPoint* Get(FPointIndex Index);
+
+  FHalfEdge* New(FEdgeIndex& OutIndex);
+  FFace* New(FFaceIndex& OutIndex);
+  FVertex* New(FVertexIndex& OutIndex);
+  FPoint* New(FPosition Pos, FPointIndex& OutIndex);
+
+  FEdgeIndex Insert(FHalfEdge Edge);
+  FFaceIndex Insert(FFace Face);
+  FVertexIndex Insert(FVertex Vertex);
+  FPointIndex Insert(FPoint Point);
+
+  void Remove(FEdgeIndex Index);
+  void Remove(FFaceIndex Index);
+  void Remove(FVertexIndex Index);
+  void Remove(FPointIndex Index);
+
+  uint32 PointCount() const;
+  uint32 VertexCount() const;
+  uint32 FaceCount() const;
+  uint32 EdgeCount() const;
+
+  /**
+   * Sorts all buffers, moving any inactive elements to the back,
+   * and updates all connectivity information.
+   */
+  void Defrag();
+
+  /**
+   * Create an empty edge and it's adjacent edge.
+   * @returns The index of the first edge.
+   */
+  FEdgeIndex MakeEdgePair();
+
+  /**
+   * Create a new face, given a valid edge loop. If the face has more
+   * than 3 sides it will also build it's triangle list.
+   *
+   * @param RootEdgeIndex: The first edge of a loop which forms the face
+   * @returns The index of the newly created face.
+   */
+  FFaceIndex MakeFace(FEdgeIndex RootEdgeIndex);
+
+  /**
+   * Connect the two edges specified with a new vertex associated with
+   * the specified point.
+   * @param EdgeIndexA: Edge which points toward the new vertex
+   * @param PointIndex: Point to associate with the new vertex
+   * @param EdgeIndexB: Edge which points out from the new vertex
+   */
+  FVertexIndex ConnectEdges(
+    FEdgeIndex EdgeIndexA, FPointIndex PointIndex, FEdgeIndex EdgeIndexB);
+};
+
+//////////////////////////////////////////////////////////////
+/// Mesh element proxies are meant to provide easy topology
+/// traversal and common calculations that could be useful
+/// to higher level systems or operators.
+
+
+//////////////////////////////////////////////////////////////
+/// Module interface.
 
 class FHedgeModule : public IModuleInterface
 {
