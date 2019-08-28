@@ -4,7 +4,6 @@
 
 #include "HedgeTypes.h"
 #include "HedgeElements.h"
-#include "HedgeKernel.h"
 
 class UPxHalfEdge;
 class UPxFace;
