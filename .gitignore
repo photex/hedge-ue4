@@ -1,8 +1,8 @@
-CMakeLists.txt
-Content/
-Source/
-Config/
-Hedge.uproject
+/CMakeLists.txt
+/Content/
+/Source/
+/Config/
+/Hedge.uproject
 
 # Visual Studio 2015 user specific files
 .vs/
