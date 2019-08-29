@@ -16,37 +16,18 @@ struct FFaceIndex;
 struct FVertexIndex;
 struct FPointIndex;
 
-// Common container aliases
-using FHedgeFaceArray = TArray<FFace>;
-using FHedgeFaceTriangleArray = TArray<FFaceTriangle>;
-using FHedgeHalfEdgeArray = TArray<FHalfEdge>;
-using FHedgeVertexArray = TArray<FVertex>;
-using FHedgePointArray = TArray<FPoint>;
+using FHedgeTriangleArray = TArray<FFaceTriangle>;
 
-using FEdgeIndexSet = TSet<FEdgeIndex>;
 using FFaceIndexSet = TSet<FFaceIndex>;
 using FVertexIndexSet = TSet<FVertexIndex>;
 
-// Common attribute aliases
-using FPosition = FVector;
-using FNormal = FVector;
-using FTexCoord = FVector2D;
-
 /// Determines the upper limit of how many components can be added to a mesh.
 using FOffset = uint32;
-#define INVALID_OFFSET 0
-
-/// Each cell tracks how many times it's be (re)used.
-using FGeneration = uint32; // TODO: kinda large isn't it?
-#define IGNORED_GENERATION 0
+#define HEDGE_INVALID_OFFSET TNumericLimits<FOffset>::Max()
 
 /**
  * Element indices encode an offset (their 'index' into a buffer)
  * and an optional generation.
- * The generation is used to validate indices held by other systems.
- * A generation value of '0' allows another system to request an
- * element regardless of any concern of whether it has been
- * modified or replaced.
  */
 USTRUCT(BlueprintType)
 
@@ -55,20 +36,12 @@ struct FElementIndex
   GENERATED_BODY()
 
   explicit FElementIndex() noexcept
-    : OffsetVal(INVALID_OFFSET)
-    , GenerationVal(IGNORED_GENERATION)
+    : OffsetVal(HEDGE_INVALID_OFFSET)
   {
   }
 
   explicit FElementIndex(FOffset const Offset) noexcept
     : OffsetVal(Offset)
-    , GenerationVal(IGNORED_GENERATION)
-  {
-  }
-
-  explicit FElementIndex(FOffset const Offset, FGeneration const Generation) noexcept
-    : OffsetVal(Offset)
-    , GenerationVal(Generation)
   {
   }
 
@@ -77,15 +50,9 @@ struct FElementIndex
     return OffsetVal;
   }
 
-  FORCEINLINE FGeneration Generation() const
-  {
-    return GenerationVal;
-  }
-
   void Reset()
   {
-    OffsetVal = INVALID_OFFSET;
-    GenerationVal = IGNORED_GENERATION;
+    OffsetVal = HEDGE_INVALID_OFFSET;
   }
 
   bool operator!=(FElementIndex const& Other) const
@@ -95,8 +62,7 @@ struct FElementIndex
 
   bool operator==(FElementIndex const& Other) const
   {
-    return OffsetVal == Other.OffsetVal &&
-      GenerationVal == Other.GenerationVal;
+    return OffsetVal == Other.OffsetVal;
   }
 
   friend bool operator<(FElementIndex const& Lhs, FElementIndex const& Rhs)
@@ -111,12 +77,12 @@ struct FElementIndex
 
   explicit operator bool() const noexcept
   {
-    return OffsetVal > INVALID_OFFSET;
+    return OffsetVal < HEDGE_INVALID_OFFSET;
   }
 
   FString ToString() const
   {
-    return (OffsetVal == INVALID_OFFSET)
+    return (OffsetVal == HEDGE_INVALID_OFFSET)
              ? TEXT("Invalid")
              : FString::Printf(TEXT("%d"), OffsetVal);
   }
@@ -129,7 +95,6 @@ struct FElementIndex
 
 protected:
   FOffset OffsetVal;
-  FGeneration GenerationVal;
 };
 
 

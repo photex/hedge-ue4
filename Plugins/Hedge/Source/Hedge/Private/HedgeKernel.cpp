@@ -1,119 +1,175 @@
+// Copyright 2019 Chip Collier, Inc. All Rights Reserved.
+
 #include "HedgeKernel.h"
-#include "HedgeTypes.h"
 
 
-FHalfEdge* UHedgeKernel::Get(FEdgeIndex Index)
+FHalfEdge& UHedgeKernel::Get(FEdgeIndex Index)
 {
-  return nullptr;
+  return Edges.Get(Index);
 }
 
-FFace* UHedgeKernel::Get(FFaceIndex Index)
+FFace& UHedgeKernel::Get(FFaceIndex Index)
 {
-  return nullptr;
+  return Faces.Get(Index);
 }
 
-FVertex* UHedgeKernel::Get(FVertexIndex Index)
+FVertex& UHedgeKernel::Get(FVertexIndex Index)
 {
-  return nullptr;
+  return Vertices.Get(Index);
 }
 
-FPoint* UHedgeKernel::Get(FPointIndex Index)
+FPoint& UHedgeKernel::Get(FPointIndex Index)
 {
-  return nullptr;
+  return Points.Get(Index);
 }
 
-FHalfEdge* UHedgeKernel::New(FEdgeIndex& OutIndex)
+FHalfEdge& UHedgeKernel::New(FEdgeIndex& OutIndex)
 {
-  return nullptr;
+  return Edges.New(OutIndex);
 }
 
-FFace* UHedgeKernel::New(FFaceIndex& OutIndex)
+FFace& UHedgeKernel::New(FFaceIndex& OutIndex)
 {
-  return nullptr;
+  return Faces.New(OutIndex);
 }
 
-FVertex* UHedgeKernel::New(FVertexIndex& OutIndex)
+FVertex& UHedgeKernel::New(FVertexIndex& OutIndex)
 {
-  return nullptr;
+  return Vertices.New(OutIndex);
 }
 
-FPoint* UHedgeKernel::New(FVector Pos, FPointIndex& OutIndex)
+FPoint& UHedgeKernel::New(FPointIndex& OutIndex)
 {
-  return nullptr;
+  return Points.New(OutIndex);
 }
 
-FEdgeIndex UHedgeKernel::Insert(FHalfEdge Edge)
+FEdgeIndex UHedgeKernel::Add(FHalfEdge&& Edge)
 {
-  return FEdgeIndex::Invalid;
+  return Edges.Add(MoveTemp(Edge));
 }
 
-FFaceIndex UHedgeKernel::Insert(FFace Face)
+FFaceIndex UHedgeKernel::Add(FFace&& Face)
 {
-  return FFaceIndex::Invalid;
+  return Faces.Add(MoveTemp(Face));
 }
 
-FVertexIndex UHedgeKernel::Insert(FVertex Vertex)
+FVertexIndex UHedgeKernel::Add(FVertex&& Vertex)
 {
-  return FVertexIndex::Invalid;
+  return Vertices.Add(MoveTemp(Vertex));
 }
 
-FPointIndex UHedgeKernel::Insert(FPoint Point)
+FPointIndex UHedgeKernel::Add(FPoint&& Point)
 {
-  return FPointIndex::Invalid;
+  return Points.Add(MoveTemp(Point));
 }
 
 void UHedgeKernel::Remove(FEdgeIndex Index)
 {
+  Edges.Remove(Index);
 }
 
 void UHedgeKernel::Remove(FFaceIndex Index)
 {
+  Faces.Remove(Index);
 }
 
 void UHedgeKernel::Remove(FVertexIndex Index)
 {
+  Vertices.Remove(Index);
 }
 
 void UHedgeKernel::Remove(FPointIndex Index)
 {
+  Points.Remove(Index);
 }
 
-uint32 UHedgeKernel::PointCount() const
+uint32 UHedgeKernel::NumPoints() const
 {
-  return 0;
+  return Points.Num();
 }
 
-uint32 UHedgeKernel::VertexCount() const
+uint32 UHedgeKernel::NumVertices() const
 {
-  return 0;
+  return Vertices.Num();
 }
 
-uint32 UHedgeKernel::FaceCount() const
+uint32 UHedgeKernel::NumFaces() const
 {
-  return 0;
+  return Faces.Num();
 }
 
-uint32 UHedgeKernel::EdgeCount() const
+uint32 UHedgeKernel::NumEdges() const
 {
-  return 0;
+  return Edges.Num();
 }
 
 void UHedgeKernel::Defrag()
 {
+  unimplemented();
 }
 
 FEdgeIndex UHedgeKernel::MakeEdgePair()
 {
-  return FEdgeIndex::Invalid;
+  FEdgeIndex EdgeIndex0;
+  FHalfEdge& Edge0 = New(EdgeIndex0);
+  FEdgeIndex EdgeIndex1;
+  FHalfEdge& Edge1 = New(EdgeIndex1);
+
+  Edge0.AdjacentEdgeIndex = EdgeIndex1;
+  Edge1.AdjacentEdgeIndex = EdgeIndex0;
+
+  return EdgeIndex0;
 }
 
 FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex RootEdgeIndex)
 {
-  return FFaceIndex::Invalid;
+  FFaceIndex FaceIndex;
+  FFace& Face = New(FaceIndex);
+  Face.RootEdgeIndex = RootEdgeIndex;
+
+  int32 EdgeCount = 1;
+  auto CurrentEdgeIndex = RootEdgeIndex;
+  while (CurrentEdgeIndex)
+  {
+    auto& Edge = Get(CurrentEdgeIndex);
+    Edge.FaceIndex = FaceIndex;
+
+    check(Edge.NextEdgeIndex != CurrentEdgeIndex);
+    if (Edge.NextEdgeIndex == RootEdgeIndex)
+    {
+      break;
+    }
+
+    CurrentEdgeIndex = Edge.NextEdgeIndex;
+    ++EdgeCount;
+  }
+
+  if (EdgeCount > 3)
+  {
+    // TODO: Build triangle array.
+  }
+
+  return FaceIndex;
 }
 
 FVertexIndex UHedgeKernel::ConnectEdges(
   FEdgeIndex EdgeIndexA, FPointIndex PointIndex, FEdgeIndex EdgeIndexB)
 {
-  return FVertexIndex::Invalid;
+  FHalfEdge& EdgeA = Get(EdgeIndexA);
+  FHalfEdge& EdgeB = Get(EdgeIndexB);
+  FPoint& Point = Get(PointIndex);
+
+  FVertexIndex VertexIndex;
+  FVertex& Vertex = New(VertexIndex);
+
+  Vertex.PointIndex = PointIndex;
+  Vertex.EdgeIndex = EdgeIndexB;
+
+  EdgeA.NextEdgeIndex = EdgeIndexB;
+  EdgeB.PrevEdgeIndex = EdgeIndexA;
+  EdgeB.VertexIndex = VertexIndex;
+
+  Point.Vertices.Add(VertexIndex);
+
+  return VertexIndex;
 }
