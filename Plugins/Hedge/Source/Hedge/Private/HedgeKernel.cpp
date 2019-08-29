@@ -1,6 +1,7 @@
 // Copyright 2019 Chip Collier, Inc. All Rights Reserved.
 
 #include "HedgeKernel.h"
+#include "HedgeLogging.h"
 
 
 FHalfEdge& UHedgeKernel::Get(FEdgeIndex Index)
@@ -75,11 +76,27 @@ void UHedgeKernel::Remove(FFaceIndex Index)
 
 void UHedgeKernel::Remove(FVertexIndex Index)
 {
+  { 
+    auto& Vertex = Get(Index);
+    auto& Point = Get(Vertex.PointIndex);
+    auto& Edge = Get(Vertex.EdgeIndex);
+    Point.Vertices.Remove(Index);
+    Edge.VertexIndex = FVertexIndex::Invalid;
+  }
+
   Vertices.Remove(Index);
 }
 
 void UHedgeKernel::Remove(FPointIndex Index)
 {
+  {
+    auto& Point = Points.Get(Index);
+    for (auto const& VertexIndex : Point.Vertices)
+    {
+      auto& Vertex = Vertices.Get(VertexIndex);
+      Vertex.PointIndex = FPointIndex::Invalid;
+    }
+  }
   Points.Remove(Index);
 }
 
@@ -105,6 +122,7 @@ uint32 UHedgeKernel::NumEdges() const
 
 void UHedgeKernel::Defrag()
 {
+  ErrorLog("UHedgeKernel::Defrag is not yet implemented.");
   unimplemented();
 }
 

@@ -12,10 +12,8 @@
  * strongly typed indices.
  *
  * @note In the rust and vanilla c++ versions I was ensuring that there
- *       was always a single 'inactive' element in the buffers. Because
- *       we aren't using a base collection type that doesn't require
- *       such a thing to function I can't see any real benefit to doing
- *       the same thing here.
+ *       was always a single 'inactive' element in the buffers. I can't
+ *       see any real benefit to doing the same thing here. (for now)
  */
 template<typename ElementType, typename ElementIndexType>
 class THedgeElementBuffer
@@ -69,10 +67,17 @@ public:
  * fundamental utilities. It's meant to be low level and
  * is probably not fun to use.
  *
- * Unlike the other versions and attempts I've done so far,
- * this kernel is going to assume it's inputs are valid and
- * expects higher level code to have a plan for certain
- * externalities.
+ * The primary job of the kernel is to make sure we have a
+ * consistent way to create and remove mesh elements with
+ * correct connectivity. This is not always easy because
+ * most things happen in steps and data is circularly associated.
+ * Hopefully the API here makes it obvious or straight forward
+ * to perform the most essential modifications to a mesh.
+ *
+ * @note Unlike the other versions and attempts I've done so far,
+ *       this kernel is going to assume it's inputs are valid and
+ *       expects higher level code to have a plan for certain
+ *       externalities.
  */
 UCLASS()
 class UHedgeKernel final : public UObject
