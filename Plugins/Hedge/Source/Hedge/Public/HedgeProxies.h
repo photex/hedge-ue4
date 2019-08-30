@@ -26,7 +26,12 @@ struct FPxElement
 
   explicit operator bool() const noexcept
   {
-    return Kernel != nullptr && static_cast<bool>(Index);
+    return IsValid();
+  }
+
+  FORCEINLINE bool IsValid() const noexcept
+  {
+    return Kernel != nullptr && Kernel->IsValidIndex(Index);
   }
 
   bool operator==(FPxElement const& Other) const
@@ -39,12 +44,12 @@ struct FPxElement
     return Index != Other.Index && Kernel != Other.Kernel;
   }
 
-  ElementType& GetElement() const
+  FORCEINLINE ElementType& GetElement() const
   {
     return Kernel->Get(Index);
   }
 
-  ElementIndexType GetIndex()
+  FORCEINLINE ElementIndexType GetIndex()
   {
     return Index;
   }
