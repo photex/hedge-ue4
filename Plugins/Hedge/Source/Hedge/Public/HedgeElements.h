@@ -1,4 +1,4 @@
-// Copyright 2019 Chip Collier, Inc. All Rights Reserved.
+// Copyright 2019 Chip Collier. All Rights Reserved.
 
 #pragma once
 
@@ -82,7 +82,17 @@ struct FVertex : FMeshElement
 struct FPoint : FMeshElement
 {
   /// The location of this point.
-  FVector Position = FVector::ZeroVector;
+  FVector Position;
   /// The associated vertices
   FVertexIndexSet Vertices;
+
+  FPoint(FVector InPosition)
+    : Position(MoveTemp(InPosition))
+  {
+  }
+
+  FPoint()
+    : Position(FVector::ZeroVector)
+  {
+  }
 };

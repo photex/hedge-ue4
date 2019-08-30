@@ -1,4 +1,4 @@
-// Copyright 2019 Chip Collier, Inc. All Rights Reserved.
+// Copyright 2019 Chip Collier. All Rights Reserved.
 
 #pragma once
 
