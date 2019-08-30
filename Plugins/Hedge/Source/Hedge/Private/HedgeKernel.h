@@ -13,7 +13,11 @@
  *
  * @note In the rust and vanilla c++ versions I was ensuring that there
  *       was always a single 'inactive' element in the buffers. I can't
- *       see any real benefit to doing the same thing here. (for now)
+ *       see any real benefit to doing the same thing here (for now).
+ *       The MeshDescription module has a much more fully realized version
+ *       of this, and as our index type has essentially turned into a copy
+ *       of the element id types of that module, I believe this will end
+ *       up getting deprecated along with the our index type.
  */
 template<typename ElementType, typename ElementIndexType>
 class THedgeElementBuffer
@@ -83,11 +87,18 @@ UCLASS()
 class UHedgeKernel final : public UObject
 {
   GENERATED_BODY()
+
   THedgeElementBuffer<FHalfEdge, FEdgeIndex> Edges;
   THedgeElementBuffer<FVertex, FVertexIndex> Vertices;
   THedgeElementBuffer<FFace, FFaceIndex> Faces;
   THedgeElementBuffer<FPoint, FPointIndex> Points;
+
 public:
+
+  bool IsValidIndex(FEdgeIndex Index) const;
+  bool IsValidIndex(FFaceIndex Index) const;
+  bool IsValidIndex(FVertexIndex Index) const;
+  bool IsValidIndex(FPointIndex Index) const;
 
   FHalfEdge& Get(FEdgeIndex Index);
   FFace& Get(FFaceIndex Index);

@@ -2,6 +2,7 @@
 
 #include "HedgeMesh.h"
 #include "HedgeKernel.h"
+#include "HedgeProxies.h"
 
 UHedgeMesh::UHedgeMesh()
   : Kernel(nullptr)
@@ -15,6 +16,26 @@ void UHedgeMesh::GetStats(FHedgeMeshStats& OutStats) const
   OutStats.NumVertices = Kernel->NumVertices();
   OutStats.NumEdges = Kernel->NumEdges();
   OutStats.NumFaces = Kernel->NumFaces();
+}
+
+FPxFace UHedgeMesh::Face(FFaceIndex const& Index) const
+{
+  return FPxFace(Kernel, Index);
+}
+
+FPxHalfEdge UHedgeMesh::Edge(FEdgeIndex const& Index) const
+{
+  return FPxHalfEdge(Kernel, Index);
+}
+
+FPxPoint UHedgeMesh::Point(FPointIndex const& Index) const
+{
+  return FPxPoint(Kernel, Index);
+}
+
+FPxVertex UHedgeMesh::Vertex(FVertexIndex const& Index) const
+{
+  return FPxVertex(Kernel, Index);
 }
 
 void UHedgeMesh::Dissolve(FEdgeIndex Index)

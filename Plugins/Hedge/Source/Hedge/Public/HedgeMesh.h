@@ -16,6 +16,7 @@ class UHedgeMesh;
 class UHedgeMeshBuilder;
 class UHedgeElementLoopBuilder;
 
+
 /**
  * Very little information currently here but in the future
  * it can be exanded to include whatever information we need.
@@ -48,10 +49,10 @@ public:
 
   void GetStats(FHedgeMeshStats& OutStats) const;
 
-  FPxFace Face(FFaceIndex const& Index);
-  FPxHalfEdge Edge(FEdgeIndex const& Index);
-  FPxPoint Point(FPointIndex const& Index);
-  FPxVertex Vertex(FVertexIndex const& Index);
+  FPxFace Face(FFaceIndex const& Index) const;
+  FPxHalfEdge Edge(FEdgeIndex const& Index) const;
+  FPxPoint Point(FPointIndex const& Index) const;
+  FPxVertex Vertex(FVertexIndex const& Index) const;
 
   /**
    * Removes the specified edge, and associated elements.

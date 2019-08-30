@@ -4,22 +4,42 @@
 #include "HedgeLogging.h"
 
 
-FHalfEdge& UHedgeKernel::Get(FEdgeIndex Index)
+bool UHedgeKernel::IsValidIndex(FEdgeIndex const Index) const
+{
+  return Edges.Elements.IsAllocated(Index.Offset());
+}
+
+bool UHedgeKernel::IsValidIndex(FFaceIndex const Index) const
+{
+  return Faces.Elements.IsAllocated(Index.Offset());
+}
+
+bool UHedgeKernel::IsValidIndex(FVertexIndex const Index) const
+{
+  return Vertices.Elements.IsAllocated(Index.Offset());
+}
+
+bool UHedgeKernel::IsValidIndex(FPointIndex const Index) const
+{
+  return Points.Elements.IsAllocated(Index.Offset());
+}
+
+FHalfEdge& UHedgeKernel::Get(FEdgeIndex const Index)
 {
   return Edges.Get(Index);
 }
 
-FFace& UHedgeKernel::Get(FFaceIndex Index)
+FFace& UHedgeKernel::Get(FFaceIndex const Index)
 {
   return Faces.Get(Index);
 }
 
-FVertex& UHedgeKernel::Get(FVertexIndex Index)
+FVertex& UHedgeKernel::Get(FVertexIndex const Index)
 {
   return Vertices.Get(Index);
 }
 
-FPoint& UHedgeKernel::Get(FPointIndex Index)
+FPoint& UHedgeKernel::Get(FPointIndex const Index)
 {
   return Points.Get(Index);
 }
@@ -64,17 +84,17 @@ FPointIndex UHedgeKernel::Add(FPoint&& Point)
   return Points.Add(MoveTemp(Point));
 }
 
-void UHedgeKernel::Remove(FEdgeIndex Index)
+void UHedgeKernel::Remove(FEdgeIndex const Index)
 {
   Edges.Remove(Index);
 }
 
-void UHedgeKernel::Remove(FFaceIndex Index)
+void UHedgeKernel::Remove(FFaceIndex const Index)
 {
   Faces.Remove(Index);
 }
 
-void UHedgeKernel::Remove(FVertexIndex Index)
+void UHedgeKernel::Remove(FVertexIndex const Index)
 {
   { 
     auto& Vertex = Get(Index);
@@ -87,7 +107,7 @@ void UHedgeKernel::Remove(FVertexIndex Index)
   Vertices.Remove(Index);
 }
 
-void UHedgeKernel::Remove(FPointIndex Index)
+void UHedgeKernel::Remove(FPointIndex const Index)
 {
   {
     auto& Point = Points.Get(Index);
@@ -139,7 +159,7 @@ FEdgeIndex UHedgeKernel::MakeEdgePair()
   return EdgeIndex0;
 }
 
-FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex RootEdgeIndex)
+FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex const RootEdgeIndex)
 {
   FFaceIndex FaceIndex;
   FFace& Face = New(FaceIndex);
@@ -171,7 +191,9 @@ FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex RootEdgeIndex)
 }
 
 FVertexIndex UHedgeKernel::ConnectEdges(
-  FEdgeIndex EdgeIndexA, FPointIndex PointIndex, FEdgeIndex EdgeIndexB)
+  FEdgeIndex const EdgeIndexA, 
+  FPointIndex const PointIndex, 
+  FEdgeIndex const EdgeIndexB)
 {
   FHalfEdge& EdgeA = Get(EdgeIndexA);
   FHalfEdge& EdgeB = Get(EdgeIndexB);
