@@ -89,7 +89,7 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
   TestTrue(TEXT("P1 was missing vertex0 index"), P1.Vertices.Contains(VIndex0));
   TestTrue(TEXT("P2 was missing vertex1 index"), P2.Vertices.Contains(VIndex1));
 
-  auto CheckEdge = [&Kernel, this](
+  auto const ValidateEdge = [&Kernel, this](
     FEdgeIndex const Eindex, 
     FEdgeIndex const Prev,
     FEdgeIndex const Next, 
@@ -105,9 +105,9 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Edge vertex index did not match specified edge."), Edge.VertexIndex, Vindex);
   };
 
-  CheckEdge(EIndex0, EIndex2, EIndex1, VIndex2, FIndex0);
-  CheckEdge(EIndex1, EIndex0, EIndex2, VIndex0, FIndex0);
-  CheckEdge(EIndex2, EIndex1, EIndex0, VIndex1, FIndex0);
+  ValidateEdge(EIndex0, EIndex2, EIndex1, VIndex2, FIndex0);
+  ValidateEdge(EIndex1, EIndex0, EIndex2, VIndex0, FIndex0);
+  ValidateEdge(EIndex2, EIndex1, EIndex0, VIndex1, FIndex0);
 
   return true;
 }
