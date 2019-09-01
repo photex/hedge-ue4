@@ -150,6 +150,13 @@ public:
   FEdgeIndex MakeEdgePair();
 
   /**
+   * Create an empty edge and it's adjacent edge. Associate
+   * the first edge with the specified face.
+   * @returns The index of the first edge.
+   */
+  FEdgeIndex MakeEdgePair(FFaceIndex FaceIndex);
+
+  /**
    * Create a new face, given a valid edge loop.
    * @todo: If the face has more than 3 sides, build it's triangle list.
    *

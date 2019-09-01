@@ -159,6 +159,20 @@ FEdgeIndex UHedgeKernel::MakeEdgePair()
   return EdgeIndex0;
 }
 
+FEdgeIndex UHedgeKernel::MakeEdgePair(FFaceIndex FaceIndex)
+{
+  FEdgeIndex EdgeIndex0;
+  FHalfEdge& Edge0 = New(EdgeIndex0);
+  FEdgeIndex EdgeIndex1;
+  FHalfEdge& Edge1 = New(EdgeIndex1);
+
+  Edge0.AdjacentEdgeIndex = EdgeIndex1;
+  Edge0.FaceIndex = FaceIndex;
+  Edge1.AdjacentEdgeIndex = EdgeIndex0;
+
+  return EdgeIndex0;
+}
+
 FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex const RootEdgeIndex)
 {
   FFaceIndex FaceIndex;
