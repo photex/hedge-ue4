@@ -75,10 +75,10 @@ public:
   {
     OutRemapTable.Empty(Elements.GetMaxIndex());
     TSparseArray<ElementType> NewBuffer;
-    for (auto& It : Elements)
+    for (typename TSparseArray<ElementType>::TIterator It( Elements ); It; ++It)
     {
-      auto const PreviousOffset = It.Index();
-      auto const NewOffset = NewBuffer.Add(MoveTemp(*It));
+      uint32 const PreviousOffset = It.GetIndex();
+      uint32 const NewOffset = NewBuffer.Add(MoveTemp(*It));
       OutRemapTable.Add(ElementIndexType(PreviousOffset), ElementIndexType(NewOffset));
     }
     Elements = MoveTemp(NewBuffer);
