@@ -7,6 +7,9 @@
 #include "HedgeElements.h"
 #include "HedgeKernel.generated.h"
 
+template<typename ElementIndexType>
+using FRemapTable = TMap<ElementIndexType, ElementIndexType>;
+
 /**
  * This is a very simple wrapper over TSparseArray used to enforce
  * strongly typed indices.
@@ -63,6 +66,22 @@ public:
   {
     OutIndex = Add();
     return Get(OutIndex);
+  }
+
+  // Using the same approach as the MeshDescription module because that
+  // is just a heck of a lot easier than the stuff I did before when
+  // trying to just reuse the container and sort/swap elements around.
+  void Defrag(FRemapTable<ElementIndexType>& OutRemapTable)
+  {
+    OutRemapTable.Empty(Elements.GetMaxIndex());
+    TSparseArray<ElementType> NewBuffer;
+    for (auto& It : Elements)
+    {
+      auto const PreviousOffset = It.Index();
+      auto const NewOffset = NewBuffer.Add(MoveTemp(*It));
+      OutRemapTable.Add(ElementIndexType(PreviousOffset), ElementIndexType(NewOffset));
+    }
+    Elements = MoveTemp(NewBuffer);
   }
 };
 
@@ -126,20 +145,8 @@ public:
   uint32 NumEdges() const;
 
   /**
-   * Sorts all buffers, moving any inactive elements to the back,
-   * and updates all connectivity information.
-   *
-   * @warning Implementation pending.
-   *
-   * @note Compared to the rust version we've got some stuff to consider.
-   *       The main difference of course is that in rust we are 'defrag'ing
-   *       in-place and then shrinking the buffer.
-   *       Because we're using a TSparseArray we *might* be able to do something
-   *       similar, but looking at how it's done in the ue4 MeshDescription
-   *       module, they are apparently copying/moving elements into a new
-   *       sparse array and then providing a map from previous index to new index.
-   *       This could be done here too and maybe it's just easier than
-   *       the hoop jumping I do in the rust library.
+   * Reorganize all element buffers into contiguous arrays
+   * and updates indices on related elements.
    */
   void Defrag();
 

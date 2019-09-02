@@ -86,22 +86,110 @@ FPointIndex UHedgeKernel::Add(FPoint&& Point)
 
 void UHedgeKernel::Remove(FEdgeIndex const Index)
 {
+  if (!IsValidIndex(Index))
+  {
+    return;
+  }
+
+  { // Cleanup of any referring elements
+    auto& Edge = Get(Index);
+
+    if (IsValidIndex(Edge.NextEdgeIndex))
+    {
+      auto& Next = Get(Edge.NextEdgeIndex);
+      if (Next.PrevEdgeIndex == Index)
+      {
+        Next.PrevEdgeIndex = FEdgeIndex::Invalid;
+      }
+    }
+
+    if (IsValidIndex(Edge.PrevEdgeIndex))
+    {
+      auto& Previous = Get(Edge.PrevEdgeIndex);
+      if (Previous.NextEdgeIndex == Index)
+      {
+        Previous.NextEdgeIndex = FEdgeIndex::Invalid;
+      }
+    }
+
+    // TODO: This raises some questions, but I think it's the right way to start
+    if (IsValidIndex(Edge.AdjacentEdgeIndex))
+    {
+      { // First we cleanup the reference to this edge.
+        auto& Adjacent = Get(Edge.AdjacentEdgeIndex);
+        if (Adjacent.AdjacentEdgeIndex == Index)
+        {
+          Adjacent.AdjacentEdgeIndex = FEdgeIndex::Invalid;
+        }
+      }
+      Remove(Edge.AdjacentEdgeIndex);
+    }
+
+    if (IsValidIndex(Edge.FaceIndex))
+    {
+      auto& Face = Get(Edge.FaceIndex);
+      if (Face.RootEdgeIndex == Index)
+      {
+        if (IsValidIndex(Edge.NextEdgeIndex))
+        {
+          Face.RootEdgeIndex = Edge.NextEdgeIndex;
+        }
+        else if (IsValidIndex(Edge.PrevEdgeIndex))
+        {
+          Face.RootEdgeIndex = Edge.NextEdgeIndex;
+        }
+        else
+        {
+          // TODO: Determine whether it makes sense to also remove the face.
+          Face.RootEdgeIndex = FEdgeIndex::Invalid;
+        }
+      }
+    }
+  }
   Edges.Remove(Index);
 }
 
 void UHedgeKernel::Remove(FFaceIndex const Index)
 {
+  if (!IsValidIndex(Index))
+  {
+    return;
+  }
+
+  { // Cleanup of any referring elements
+    auto& Face = Get(Index);
+    auto EIndex = Face.RootEdgeIndex;
+    while(IsValidIndex(EIndex))
+    {
+      auto& Edge = Get(EIndex);
+      Edge.FaceIndex = FFaceIndex::Invalid;
+      EIndex = Edge.NextEdgeIndex;
+    }
+  }
+  
   Faces.Remove(Index);
 }
 
 void UHedgeKernel::Remove(FVertexIndex const Index)
 {
-  { 
+  if (!IsValidIndex(Index))
+  {
+    return;
+  }
+
+  { // Cleanup associated references
     auto& Vertex = Get(Index);
-    auto& Point = Get(Vertex.PointIndex);
-    auto& Edge = Get(Vertex.EdgeIndex);
-    Point.Vertices.Remove(Index);
-    Edge.VertexIndex = FVertexIndex::Invalid;
+    if (IsValidIndex(Vertex.PointIndex))
+    {
+      auto& Point = Get(Vertex.PointIndex);
+      Point.Vertices.Remove(Index);
+    }
+
+    if (IsValidIndex(Vertex.EdgeIndex))
+    {
+      auto& Edge = Get(Vertex.EdgeIndex);
+      Edge.VertexIndex = FVertexIndex::Invalid;
+    }
   }
 
   Vertices.Remove(Index);
@@ -109,10 +197,19 @@ void UHedgeKernel::Remove(FVertexIndex const Index)
 
 void UHedgeKernel::Remove(FPointIndex const Index)
 {
+  if (!IsValidIndex(Index))
+  {
+    return;
+  }
+
   {
     auto& Point = Points.Get(Index);
     for (auto const& VertexIndex : Point.Vertices)
     {
+      if (!IsValidIndex(VertexIndex))
+      {
+        continue;
+      }
       auto& Vertex = Vertices.Get(VertexIndex);
       Vertex.PointIndex = FPointIndex::Invalid;
     }
@@ -142,8 +239,99 @@ uint32 UHedgeKernel::NumEdges() const
 
 void UHedgeKernel::Defrag()
 {
-  ErrorLog("UHedgeKernel::Defrag is not yet implemented.");
-  unimplemented();
+  //////////////////////
+  /// Points
+  
+  FRemapTable<FPointIndex> PointRemapTable;
+  Points.Defrag(PointRemapTable);
+  for (auto& Vertex : Vertices.Elements)
+  {
+    if (Vertex.PointIndex)
+    {
+      Vertex.PointIndex = PointRemapTable[Vertex.PointIndex];
+    }
+  }
+
+  //////////////////////
+  /// Vertices
+
+  FRemapTable<FVertexIndex> VertexRemapTable;
+  Vertices.Defrag(VertexRemapTable);
+  for (auto& Point : Points.Elements)
+  {
+    TSet<FVertexIndex> NewVertexSet;
+    for (auto const& VertexIndex : Point.Vertices)
+    {
+      NewVertexSet.Add(VertexRemapTable[VertexIndex]);
+    }
+    Point.Vertices = MoveTemp(NewVertexSet);
+  }
+  for (auto& Edge : Edges.Elements)
+  {
+    if (Edge.VertexIndex)
+    {
+      Edge.VertexIndex = VertexRemapTable[Edge.VertexIndex];
+    }
+  }
+  for (auto& Face : Faces.Elements)
+  {
+    for (auto& Triangle : Face.Triangles)
+    {
+      Triangle.VertexIndex0 = VertexRemapTable[Triangle.VertexIndex0];
+      Triangle.VertexIndex1 = VertexRemapTable[Triangle.VertexIndex1];
+      Triangle.VertexIndex2 = VertexRemapTable[Triangle.VertexIndex2];
+    }
+  }
+
+  ///////////////////////
+  /// Edges
+
+  FRemapTable<FEdgeIndex> EdgeRemapTable;
+  Edges.Defrag(EdgeRemapTable);
+  for (auto& Vertex : Vertices.Elements)
+  {
+    if (Vertex.EdgeIndex)
+    {
+      Vertex.EdgeIndex = EdgeRemapTable[Vertex.EdgeIndex];
+    }
+  }
+  for (auto& Edge : Edges.Elements)
+  {
+    if (Edge.NextEdgeIndex)
+    {
+      Edge.NextEdgeIndex = EdgeRemapTable[Edge.NextEdgeIndex];
+    }
+
+    if (Edge.PrevEdgeIndex)
+    {
+      Edge.PrevEdgeIndex = EdgeRemapTable[Edge.PrevEdgeIndex];
+    }
+
+    if (Edge.AdjacentEdgeIndex)
+    {
+      Edge.AdjacentEdgeIndex = EdgeRemapTable[Edge.AdjacentEdgeIndex];
+    }
+  }
+  for (auto& Face : Faces.Elements)
+  {
+    if (Face.RootEdgeIndex)
+    {
+      Face.RootEdgeIndex = EdgeRemapTable[Face.RootEdgeIndex];
+    }
+  }
+
+  ///////////////////////
+  /// Faces
+  
+  FRemapTable<FFaceIndex> FaceRemapTable;
+  Faces.Defrag(FaceRemapTable);
+  for (auto& Edge : Edges.Elements)
+  {
+    if (Edge.FaceIndex)
+    {
+      Edge.FaceIndex = FaceRemapTable[Edge.FaceIndex];
+    }
+  }
 }
 
 FEdgeIndex UHedgeKernel::MakeEdgePair()
@@ -179,12 +367,14 @@ FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex const RootEdgeIndex)
   FFace& Face = New(FaceIndex);
   Face.RootEdgeIndex = RootEdgeIndex;
 
+  TArray<FVertexIndex> PerimeterVertices;
   int32 EdgeCount = 1;
   auto CurrentEdgeIndex = RootEdgeIndex;
   while (CurrentEdgeIndex)
   {
     auto& Edge = Get(CurrentEdgeIndex);
     Edge.FaceIndex = FaceIndex;
+    PerimeterVertices.Add(Edge.VertexIndex);
 
     check(Edge.NextEdgeIndex != CurrentEdgeIndex);
     if (Edge.NextEdgeIndex == RootEdgeIndex)
@@ -199,6 +389,14 @@ FFaceIndex UHedgeKernel::MakeFace(FEdgeIndex const RootEdgeIndex)
   if (EdgeCount > 3)
   {
     // TODO: Build triangle array.
+  }
+  else if (EdgeCount == 3)
+  {
+    FFaceTriangle Triangle;
+    Triangle.VertexIndex0 = PerimeterVertices[0];
+    Triangle.VertexIndex1 = PerimeterVertices[1];
+    Triangle.VertexIndex2 = PerimeterVertices[2];
+    Face.Triangles.Add(MoveTemp(Triangle));
   }
 
   return FaceIndex;

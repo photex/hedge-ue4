@@ -163,7 +163,7 @@ FFaceIndex UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
   }
   auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetIndex();
   Kernel->ConnectEdges(LastEdge, Point, RootEdge);
-  // TODO work this into our already existing loop?
+  // Maybe work this into our already existing loop?
   return Kernel->MakeFace(RootEdge);
 }
 
