@@ -30,7 +30,6 @@ using FOffset = uint32;
  * and an optional generation.
  */
 USTRUCT(BlueprintType)
-
 struct FElementIndex
 {
   GENERATED_BODY()
@@ -99,7 +98,6 @@ protected:
 
 
 USTRUCT(BlueprintType)
-
 struct FEdgeIndex : public FElementIndex
 {
   GENERATED_BODY()
@@ -114,7 +112,6 @@ struct FEdgeIndex : public FElementIndex
 
 
 USTRUCT(BlueprintType)
-
 struct FFaceIndex : public FElementIndex
 {
   GENERATED_BODY()
@@ -129,7 +126,6 @@ struct FFaceIndex : public FElementIndex
 
 
 USTRUCT(BlueprintType)
-
 struct FVertexIndex : public FElementIndex
 {
   GENERATED_BODY()
@@ -144,7 +140,6 @@ struct FVertexIndex : public FElementIndex
 
 
 USTRUCT(BlueprintType)
-
 struct FPointIndex : public FElementIndex
 {
   GENERATED_BODY()
