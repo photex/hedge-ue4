@@ -151,6 +151,9 @@ FFaceIndex UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
     ErrorLog("Unable to create a face without at least 3 edges.");
     return FFaceIndex::Invalid;
   }
+  FFaceIndex FaceIndex;
+  FFace& Face = Kernel->New(FaceIndex);
+
   auto const RootEdge = Edges[0];
   auto LastEdge = RootEdge;
   auto CurrentEdge = LastEdge;
@@ -159,12 +162,13 @@ FFaceIndex UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
     CurrentEdge = Edges[i];
     auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetIndex();
     Kernel->ConnectEdges(LastEdge, Point, CurrentEdge);
+    Kernel->Get(CurrentEdge).FaceIndex = FaceIndex;
     LastEdge = CurrentEdge;
   }
   auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetIndex();
   Kernel->ConnectEdges(LastEdge, Point, RootEdge);
-  // Maybe work this into our already existing loop?
-  return Kernel->MakeFace(RootEdge);
+  
+  return FaceIndex;
 }
 
 void UHedgeMesh::Dissolve(FEdgeIndex Index)

@@ -8,7 +8,20 @@
 #include "HedgeKernel.generated.h"
 
 template<typename ElementIndexType>
-using FRemapTable = TMap<ElementIndexType, ElementIndexType>;
+using TRemapTable = TMap<ElementIndexType, ElementIndexType>;
+
+using FPointRemapTable = TRemapTable<FPointIndex>;
+using FVertexRemapTable = TRemapTable<FVertexIndex>;
+using FEdgeRemapTable = TRemapTable<FEdgeIndex>;
+using FFaceRemapTable = TRemapTable<FFaceIndex>;
+
+struct FRemapData
+{
+  FPointRemapTable Points;
+  FVertexRemapTable Vertices;
+  FEdgeRemapTable Edges;
+  FFaceRemapTable Faces;
+};
 
 /**
  * This is a very simple wrapper over TSparseArray used to enforce
@@ -26,6 +39,7 @@ template<typename ElementType, typename ElementIndexType>
 class THedgeElementBuffer
 {
   TSparseArray<ElementType> Elements;
+  uint32 Generation=1;
 
   friend class UHedgeKernel;
 
@@ -38,48 +52,69 @@ public:
     Elements.Reserve(Count);
   }
 
-  FORCEINLINE ElementIndexType Add()
-  {
-    auto Offset = Elements.Add(ElementType());
-    return ElementIndexType(Offset);
-  }
-
   FORCEINLINE ElementIndexType Add(ElementType&& Element)
   {
     auto Offset = Elements.Add(Element);
-    return ElementIndexType(Offset);
+    return ElementIndexType(Offset, Generation);
   }
 
   FORCEINLINE ElementType& Get(ElementIndexType Index)
   {
-    check(Elements.IsAllocated(Index.Offset()));
-    return Elements[Index.Offset()];
+    auto const Offset = Index.GetOffset();
+    check(Elements.IsAllocated(Offset));
+    return Elements[Offset];
   }
 
   FORCEINLINE void Remove(ElementIndexType Index)
   {
-    check(Elements.IsAllocated(Index.Offset()));
-    Elements.RemoveAtUninitialized(Index.Offset());
+    auto const Offset = Index.GetOffset();
+    check(Elements.IsAllocated(Offset));
+    Elements.RemoveAtUninitialized(Offset);
   }
 
-  ElementType& New(ElementIndexType& OutIndex)
+  FORCEINLINE ElementIndexType New()
   {
-    OutIndex = Add();
-    return Get(OutIndex);
+    auto Offset = Elements.Add(ElementType());
+    return ElementIndexType(Offset, Generation);
+  }
+
+  template<typename... ArgsType>
+  FORCEINLINE ElementIndexType New(ArgsType... Args)
+  {
+    return Add(ElementType(std::forward<ArgsType>(Args)...));
+  }
+
+  FORCEINLINE bool IsValidIndex(ElementIndexType const Index) const
+  {
+    uint32 const IndexGeneration = Index.GetGeneration();
+    FOffset const IndexOffset = Index.GetOffset();
+    bool const IsValid = Elements.IsValidIndex(IndexOffset);
+    if (IndexGeneration != HEDGE_IGNORED_GENERATION)
+    {
+      return IndexGeneration == Generation && IsValid;
+    }
+    return IsValid;
   }
 
   // Using the same approach as the MeshDescription module because that
   // is just a heck of a lot easier than the stuff I did before when
   // trying to just reuse the container and sort/swap elements around.
-  void Defrag(FRemapTable<ElementIndexType>& OutRemapTable)
+  void Defrag(TRemapTable<ElementIndexType>& OutRemapTable)
   {
+    auto PreviousGeneration = Generation;
+    ++Generation;
+
     OutRemapTable.Empty(Elements.GetMaxIndex());
+    OutRemapTable.Add(ElementIndexType(), ElementIndexType());
+
     TSparseArray<ElementType> NewBuffer;
     for (typename TSparseArray<ElementType>::TIterator It( Elements ); It; ++It)
     {
       uint32 const PreviousOffset = It.GetIndex();
       uint32 const NewOffset = NewBuffer.Add(MoveTemp(*It));
-      OutRemapTable.Add(ElementIndexType(PreviousOffset), ElementIndexType(NewOffset));
+      OutRemapTable.Add(
+        ElementIndexType(PreviousOffset, PreviousGeneration), 
+        ElementIndexType(NewOffset, Generation));
     }
     Elements = MoveTemp(NewBuffer);
   }
@@ -112,6 +147,11 @@ class UHedgeKernel final : public UObject
   THedgeElementBuffer<FFace, FFaceIndex> Faces;
   THedgeElementBuffer<FPoint, FPointIndex> Points;
 
+  void RemapPoints(FPointRemapTable const& Table);
+  void RemapEdges(FEdgeRemapTable const& Table);
+  void RemapFaces(FFaceRemapTable const& Table);
+  void RemapVertices(FVertexRemapTable const& Table);
+
 public:
 
   bool IsValidIndex(FEdgeIndex Index) const;
@@ -128,6 +168,7 @@ public:
   FFace& New(FFaceIndex& OutIndex);
   FVertex& New(FVertexIndex& OutIndex);
   FPoint& New(FPointIndex& OutIndex);
+  FPoint& New(FPointIndex& OutIndex, FVector Position);
 
   FEdgeIndex Add(FHalfEdge&& Edge);
   FFaceIndex Add(FFace&& Face);
@@ -164,13 +205,13 @@ public:
   FEdgeIndex MakeEdgePair(FFaceIndex FaceIndex);
 
   /**
-   * Create a new face, given a valid edge loop.
-   * @todo: If the face has more than 3 sides, build it's triangle list.
+   * Assigns all the connected edges to the specified face and assigns
+   * the specified edge index to the face.
    *
+   * @param FaceIndex: The face to assign and update.
    * @param RootEdgeIndex: The first edge of a loop which forms the face
-   * @returns The index of the newly created face.
    */
-  FFaceIndex MakeFace(FEdgeIndex RootEdgeIndex);
+  void SetFace(FFaceIndex FaceIndex, FEdgeIndex RootEdgeIndex);
 
   /**
    * Connect the two edges specified with a new vertex associated with

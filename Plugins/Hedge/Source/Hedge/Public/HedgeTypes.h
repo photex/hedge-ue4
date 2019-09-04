@@ -24,6 +24,7 @@ using FVertexIndexSet = TSet<FVertexIndex>;
 /// Determines the upper limit of how many components can be added to a mesh.
 using FOffset = uint32;
 #define HEDGE_INVALID_OFFSET TNumericLimits<FOffset>::Max()
+#define HEDGE_IGNORED_GENERATION 0
 
 /**
  * Element indices encode an offset (their 'index' into a buffer)
@@ -35,23 +36,37 @@ struct FElementIndex
   GENERATED_BODY()
 
   explicit FElementIndex() noexcept
-    : OffsetVal(HEDGE_INVALID_OFFSET)
+    : Offset(HEDGE_INVALID_OFFSET)
+    , Generation(HEDGE_IGNORED_GENERATION)
   {
   }
 
   explicit FElementIndex(FOffset const Offset) noexcept
-    : OffsetVal(Offset)
+    : Offset(Offset)
+    , Generation(HEDGE_IGNORED_GENERATION)
   {
   }
 
-  FORCEINLINE FOffset Offset() const
+  explicit FElementIndex(FOffset const Offset, uint32 const Generation) noexcept
+    : Offset(Offset)
+    , Generation(Generation)
   {
-    return OffsetVal;
+  }
+
+  FORCEINLINE FOffset GetOffset() const
+  {
+    return Offset;
+  }
+
+  FORCEINLINE uint32 GetGeneration() const
+  {
+    return Generation;
   }
 
   void Reset()
   {
-    OffsetVal = HEDGE_INVALID_OFFSET;
+    Offset = HEDGE_INVALID_OFFSET;
+    Generation = HEDGE_IGNORED_GENERATION;
   }
 
   bool operator!=(FElementIndex const& Other) const
@@ -61,12 +76,20 @@ struct FElementIndex
 
   bool operator==(FElementIndex const& Other) const
   {
-    return OffsetVal == Other.OffsetVal;
+    bool const bOffsetMatches = Offset == Other.Offset;
+    bool const bTestGeneration = Generation != HEDGE_IGNORED_GENERATION &&
+      Other.Generation != HEDGE_IGNORED_GENERATION;
+
+    if (bTestGeneration)
+    {
+      return bOffsetMatches && Generation == Other.Generation;
+    }
+    return bOffsetMatches;
   }
 
   friend bool operator<(FElementIndex const& Lhs, FElementIndex const& Rhs)
   {
-    return Lhs.OffsetVal < Rhs.OffsetVal;
+    return Lhs.Offset < Rhs.Offset;
   }
 
   friend bool operator>(FElementIndex const& Lhs, FElementIndex const& Rhs)
@@ -76,24 +99,26 @@ struct FElementIndex
 
   explicit operator bool() const noexcept
   {
-    return OffsetVal < HEDGE_INVALID_OFFSET;
+    return Offset < HEDGE_INVALID_OFFSET;
   }
 
   FString ToString() const
   {
-    return (OffsetVal == HEDGE_INVALID_OFFSET)
+    return (Offset == HEDGE_INVALID_OFFSET)
              ? TEXT("Invalid")
-             : FString::Printf(TEXT("%d"), OffsetVal);
+             : FString::Printf(TEXT("%d"), Offset);
   }
 
   friend FArchive& operator<<(FArchive& Ar, FElementIndex& Element)
   {
-    Ar << Element.OffsetVal;
+    // TODO: We need to serialize the generation, probably fixed at '1'
+    Ar << Element.Offset;
     return Ar;
   }
 
 protected:
-  FOffset OffsetVal;
+  FOffset Offset;
+  uint32 Generation;
 };
 
 
@@ -104,7 +129,7 @@ struct FEdgeIndex : public FElementIndex
   using FElementIndex::FElementIndex;
   FORCEINLINE friend uint32 GetTypeHash(FEdgeIndex const& Other)
   {
-    return GetTypeHash(Other.OffsetVal);
+    return GetTypeHash(Other.Offset);
   }
 
   HEDGE_API static const FEdgeIndex Invalid;
@@ -118,7 +143,7 @@ struct FFaceIndex : public FElementIndex
   using FElementIndex::FElementIndex;
   FORCEINLINE friend uint32 GetTypeHash(FFaceIndex const& Other)
   {
-    return GetTypeHash(Other.OffsetVal);
+    return GetTypeHash(Other.Offset);
   }
 
   HEDGE_API static const FFaceIndex Invalid;
@@ -132,7 +157,7 @@ struct FVertexIndex : public FElementIndex
   using FElementIndex::FElementIndex;
   FORCEINLINE friend uint32 GetTypeHash(FVertexIndex const& Other)
   {
-    return GetTypeHash(Other.OffsetVal);
+    return GetTypeHash(Other.Offset);
   }
 
   HEDGE_API static const FVertexIndex Invalid;
@@ -146,7 +171,7 @@ struct FPointIndex : public FElementIndex
   using FElementIndex::FElementIndex;
   FORCEINLINE friend uint32 GetTypeHash(FPointIndex const& Other)
   {
-    return GetTypeHash(Other.OffsetVal);
+    return GetTypeHash(Other.Offset);
   }
 
   HEDGE_API static const FPointIndex Invalid;
