@@ -8,9 +8,9 @@ void UHedgeKernel::RemapPoints(FPointRemapTable const& Table)
 {
   for (auto& Vertex : Vertices.Elements)
   {
-    if (Vertex.PointIndex)
+    if (Vertex.Point)
     {
-      Vertex.PointIndex = Table[Vertex.PointIndex];
+      Vertex.Point = Table[Vertex.Point];
     }
   }
 }
@@ -19,33 +19,33 @@ void UHedgeKernel::RemapEdges(FEdgeRemapTable const& Table)
 {
   for (auto& Vertex : Vertices.Elements)
   {
-    if (Vertex.EdgeIndex)
+    if (Vertex.Edge)
     {
-      Vertex.EdgeIndex = Table[Vertex.EdgeIndex];
+      Vertex.Edge = Table[Vertex.Edge];
     }
   }
   for (auto& Edge : Edges.Elements)
   {
-    if (Edge.NextEdgeIndex)
+    if (Edge.NextEdge)
     {
-      Edge.NextEdgeIndex = Table[Edge.NextEdgeIndex];
+      Edge.NextEdge = Table[Edge.NextEdge];
     }
 
-    if (Edge.PrevEdgeIndex)
+    if (Edge.PrevEdge)
     {
-      Edge.PrevEdgeIndex = Table[Edge.PrevEdgeIndex];
+      Edge.PrevEdge = Table[Edge.PrevEdge];
     }
 
-    if (Edge.AdjacentEdgeIndex)
+    if (Edge.AdjacentEdge)
     {
-      Edge.AdjacentEdgeIndex = Table[Edge.AdjacentEdgeIndex];
+      Edge.AdjacentEdge = Table[Edge.AdjacentEdge];
     }
   }
   for (auto& Face : Faces.Elements)
   {
-    if (Face.RootEdgeIndex)
+    if (Face.RootEdge)
     {
-      Face.RootEdgeIndex = Table[Face.RootEdgeIndex];
+      Face.RootEdge = Table[Face.RootEdge];
     }
   }
 }
@@ -54,9 +54,9 @@ void UHedgeKernel::RemapFaces(FFaceRemapTable const& Table)
 {
   for (auto& Edge : Edges.Elements)
   {
-    if (Edge.FaceIndex)
+    if (Edge.Face)
     {
-      Edge.FaceIndex = Table[Edge.FaceIndex];
+      Edge.Face = Table[Edge.Face];
     }
   }
 }
@@ -66,18 +66,18 @@ void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
   for (auto& Point : Points.Elements)
   {
     TSet<FVertexHandle> NewVertexSet;
-    for (auto const& VertexIndex : Point.Vertices)
+    for (auto const& VertexHandle : Point.Vertices)
     {
-      NewVertexSet.Add(Table[VertexIndex]);
+      NewVertexSet.Add(Table[VertexHandle]);
     }
     Point.Vertices = MoveTemp(NewVertexSet);
   }
 
   for (auto& Edge : Edges.Elements)
   {
-    if (Edge.VertexIndex)
+    if (Edge.Vertex)
     {
-      Edge.VertexIndex = Table[Edge.VertexIndex];
+      Edge.Vertex = Table[Edge.Vertex];
     }
   }
 
@@ -85,84 +85,84 @@ void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
   {
     for (auto& Triangle : Face.Triangles)
     {
-      Triangle.VertexIndex0 = Table[Triangle.VertexIndex0];
-      Triangle.VertexIndex1 = Table[Triangle.VertexIndex1];
-      Triangle.VertexIndex2 = Table[Triangle.VertexIndex2];
+      Triangle.V0 = Table[Triangle.V0];
+      Triangle.V1 = Table[Triangle.V1];
+      Triangle.V2 = Table[Triangle.V2];
     }
   }
 }
 
-bool UHedgeKernel::IsValidIndex(FEdgeIndex const Index) const
+bool UHedgeKernel::IsValidHandle(FEdgeHandle const Handle) const
 {
-  return Edges.IsValidIndex(Index);
+  return Edges.IsValidHandle(Handle);
 }
 
-bool UHedgeKernel::IsValidIndex(FFaceHandle const Index) const
+bool UHedgeKernel::IsValidHandle(FFaceHandle const Handle) const
 {
-  return Faces.IsValidIndex(Index);
+  return Faces.IsValidHandle(Handle);
 }
 
-bool UHedgeKernel::IsValidIndex(FVertexHandle const Index) const
+bool UHedgeKernel::IsValidHandle(FVertexHandle const Handle) const
 {
-  return Vertices.IsValidIndex(Index);
+  return Vertices.IsValidHandle(Handle);
 }
 
-bool UHedgeKernel::IsValidIndex(FPointHandle const Index) const
+bool UHedgeKernel::IsValidHandle(FPointHandle const Handle) const
 {
-  return Points.IsValidIndex(Index);
+  return Points.IsValidHandle(Handle);
 }
 
-FHalfEdge& UHedgeKernel::Get(FEdgeIndex const Index)
+FHalfEdge& UHedgeKernel::Get(FEdgeHandle const Handle)
 {
-  return Edges.Get(Index);
+  return Edges.Get(Handle);
 }
 
-FFace& UHedgeKernel::Get(FFaceHandle const Index)
+FFace& UHedgeKernel::Get(FFaceHandle const Handle)
 {
-  return Faces.Get(Index);
+  return Faces.Get(Handle);
 }
 
-FVertex& UHedgeKernel::Get(FVertexHandle const Index)
+FVertex& UHedgeKernel::Get(FVertexHandle const Handle)
 {
-  return Vertices.Get(Index);
+  return Vertices.Get(Handle);
 }
 
-FPoint& UHedgeKernel::Get(FPointHandle const Index)
+FPoint& UHedgeKernel::Get(FPointHandle const Handle)
 {
-  return Points.Get(Index);
+  return Points.Get(Handle);
 }
 
-FHalfEdge& UHedgeKernel::New(FEdgeIndex& OutIndex)
+FHalfEdge& UHedgeKernel::New(FEdgeHandle& OutHandle)
 {
-  OutIndex = Edges.New();
-  return Get(OutIndex);
+  OutHandle = Edges.New();
+  return Get(OutHandle);
 }
 
-FFace& UHedgeKernel::New(FFaceHandle& OutIndex)
+FFace& UHedgeKernel::New(FFaceHandle& OutHandle)
 {
-  OutIndex = Faces.New();
-  return Get(OutIndex);
+  OutHandle = Faces.New();
+  return Get(OutHandle);
 }
 
-FVertex& UHedgeKernel::New(FVertexHandle& OutIndex)
+FVertex& UHedgeKernel::New(FVertexHandle& OutHandle)
 {
-  OutIndex = Vertices.New();
-  return Get(OutIndex);
+  OutHandle = Vertices.New();
+  return Get(OutHandle);
 }
 
-FPoint& UHedgeKernel::New(FPointHandle& OutIndex)
+FPoint& UHedgeKernel::New(FPointHandle& OutHandle)
 {
-  OutIndex = Points.New();
-  return Get(OutIndex);
+  OutHandle = Points.New();
+  return Get(OutHandle);
 }
 
-FPoint& UHedgeKernel::New(FPointHandle& OutIndex, FVector Position)
+FPoint& UHedgeKernel::New(FPointHandle& OutHandle, FVector Position)
 {
-  OutIndex = Points.New(Position);
-  return Get(OutIndex);
+  OutHandle = Points.New(Position);
+  return Get(OutHandle);
 }
 
-FEdgeIndex UHedgeKernel::Add(FHalfEdge&& Edge)
+FEdgeHandle UHedgeKernel::Add(FHalfEdge&& Edge)
 {
   return Edges.Add(MoveTemp(Edge));
 }
@@ -182,154 +182,154 @@ FPointHandle UHedgeKernel::Add(FPoint&& Point)
   return Points.Add(MoveTemp(Point));
 }
 
-void UHedgeKernel::Remove(FEdgeIndex const Index)
+void UHedgeKernel::Remove(FEdgeHandle const Handle)
 {
-  if (!IsValidIndex(Index))
+  if (!IsValidHandle(Handle))
   {
     return;
   }
 
   { // Cleanup of any referring elements
-    auto& Edge = Get(Index);
+    auto& Edge = Get(Handle);
 
-    if (IsValidIndex(Edge.VertexIndex))
+    if (IsValidHandle(Edge.Vertex))
     {
       bool bShouldRemoveVert = false;
       {
-        auto& Vert = Get(Edge.VertexIndex);
-        if (Vert.EdgeIndex == Index)
+        auto& Vert = Get(Edge.Vertex);
+        if (Vert.Edge == Handle)
         {
-          Vert.EdgeIndex = FEdgeIndex::Invalid;
+          Vert.Edge = FEdgeHandle::Invalid;
           bShouldRemoveVert = true;
         }
       }
       if (bShouldRemoveVert)
       {
-        Remove(Edge.VertexIndex);
+        Remove(Edge.Vertex);
       }
     }
 
-    if (IsValidIndex(Edge.NextEdgeIndex))
+    if (IsValidHandle(Edge.NextEdge))
     {
-      auto& Next = Get(Edge.NextEdgeIndex);
-      if (Next.PrevEdgeIndex == Index)
+      auto& Next = Get(Edge.NextEdge);
+      if (Next.PrevEdge == Handle)
       {
-        Next.PrevEdgeIndex = FEdgeIndex::Invalid;
+        Next.PrevEdge = FEdgeHandle::Invalid;
       }
     }
 
-    if (IsValidIndex(Edge.PrevEdgeIndex))
+    if (IsValidHandle(Edge.PrevEdge))
     {
-      auto& Previous = Get(Edge.PrevEdgeIndex);
-      if (Previous.NextEdgeIndex == Index)
+      auto& Previous = Get(Edge.PrevEdge);
+      if (Previous.NextEdge == Handle)
       {
-        Previous.NextEdgeIndex = FEdgeIndex::Invalid;
+        Previous.NextEdge = FEdgeHandle::Invalid;
       }
     }
 
     // TODO: This raises some questions, but I think it's the right way to start
-    if (IsValidIndex(Edge.AdjacentEdgeIndex))
+    if (IsValidHandle(Edge.AdjacentEdge))
     {
       { // First we cleanup the reference to this edge.
-        auto& Adjacent = Get(Edge.AdjacentEdgeIndex);
-        if (Adjacent.AdjacentEdgeIndex == Index)
+        auto& Adjacent = Get(Edge.AdjacentEdge);
+        if (Adjacent.AdjacentEdge == Handle)
         {
-          Adjacent.AdjacentEdgeIndex = FEdgeIndex::Invalid;
+          Adjacent.AdjacentEdge = FEdgeHandle::Invalid;
         }
       }
-      Remove(Edge.AdjacentEdgeIndex);
+      Remove(Edge.AdjacentEdge);
     }
 
-    if (IsValidIndex(Edge.FaceIndex))
+    if (IsValidHandle(Edge.Face))
     {
-      auto& Face = Get(Edge.FaceIndex);
-      if (Face.RootEdgeIndex == Index)
+      auto& Face = Get(Edge.Face);
+      if (Face.RootEdge == Handle)
       {
-        if (IsValidIndex(Edge.NextEdgeIndex))
+        if (IsValidHandle(Edge.NextEdge))
         {
-          Face.RootEdgeIndex = Edge.NextEdgeIndex;
+          Face.RootEdge = Edge.NextEdge;
         }
-        else if (IsValidIndex(Edge.PrevEdgeIndex))
+        else if (IsValidHandle(Edge.PrevEdge))
         {
-          Face.RootEdgeIndex = Edge.NextEdgeIndex;
+          Face.RootEdge = Edge.NextEdge;
         }
         else
         {
           // TODO: Determine whether it makes sense to also remove the face.
-          Face.RootEdgeIndex = FEdgeIndex::Invalid;
+          Face.RootEdge = FEdgeHandle::Invalid;
         }
       }
     }
   }
-  Edges.Remove(Index);
+  Edges.Remove(Handle);
 }
 
-void UHedgeKernel::Remove(FFaceHandle const Index)
+void UHedgeKernel::Remove(FFaceHandle const Handle)
 {
-  if (!IsValidIndex(Index))
+  if (!IsValidHandle(Handle))
   {
     return;
   }
 
   { // Cleanup of any referring elements
-    auto& Face = Get(Index);
-    auto EIndex = Face.RootEdgeIndex;
-    while(IsValidIndex(EIndex))
+    auto& Face = Get(Handle);
+    auto CurrentEdgeHandle = Face.RootEdge;
+    while(IsValidHandle(CurrentEdgeHandle))
     {
-      auto& Edge = Get(EIndex);
-      Edge.FaceIndex = FFaceHandle::Invalid;
-      EIndex = Edge.NextEdgeIndex;
+      auto& Edge = Get(CurrentEdgeHandle);
+      Edge.Face = FFaceHandle::Invalid;
+      CurrentEdgeHandle = Edge.NextEdge;
     }
   }
   
-  Faces.Remove(Index);
+  Faces.Remove(Handle);
 }
 
-void UHedgeKernel::Remove(FVertexHandle const Index)
+void UHedgeKernel::Remove(FVertexHandle const Handle)
 {
-  if (!IsValidIndex(Index))
+  if (!IsValidHandle(Handle))
   {
     return;
   }
 
   { // Cleanup associated references
-    auto& Vertex = Get(Index);
-    if (IsValidIndex(Vertex.PointIndex))
+    auto& Vertex = Get(Handle);
+    if (IsValidHandle(Vertex.Point))
     {
-      auto& Point = Get(Vertex.PointIndex);
-      Point.Vertices.Remove(Index);
+      auto& Point = Get(Vertex.Point);
+      Point.Vertices.Remove(Handle);
     }
 
-    if (IsValidIndex(Vertex.EdgeIndex))
+    if (IsValidHandle(Vertex.Edge))
     {
-      auto& Edge = Get(Vertex.EdgeIndex);
-      Edge.VertexIndex = FVertexHandle::Invalid;
+      auto& Edge = Get(Vertex.Edge);
+      Edge.Vertex = FVertexHandle::Invalid;
     }
   }
 
-  Vertices.Remove(Index);
+  Vertices.Remove(Handle);
 }
 
-void UHedgeKernel::Remove(FPointHandle const Index)
+void UHedgeKernel::Remove(FPointHandle const Handle)
 {
-  if (!IsValidIndex(Index))
+  if (!IsValidHandle(Handle))
   {
     return;
   }
 
   {
-    auto& Point = Points.Get(Index);
-    for (auto const& VertexIndex : Point.Vertices)
+    auto& Point = Points.Get(Handle);
+    for (auto const& VertexHandle : Point.Vertices)
     {
-      if (!IsValidIndex(VertexIndex))
+      if (!IsValidHandle(VertexHandle))
       {
         continue;
       }
-      auto& Vertex = Vertices.Get(VertexIndex);
-      Vertex.PointIndex = FPointHandle::Invalid;
+      auto& Vertex = Vertices.Get(VertexHandle);
+      Vertex.Point = FPointHandle::Invalid;
     }
   }
-  Points.Remove(Index);
+  Points.Remove(Handle);
 }
 
 uint32 UHedgeKernel::NumPoints() const
@@ -366,77 +366,64 @@ void UHedgeKernel::Defrag()
   RemapPoints(RemapData.Points);
 }
 
-FEdgeIndex UHedgeKernel::MakeEdgePair()
+FEdgeHandle UHedgeKernel::MakeEdgePair(FFaceHandle FaceHandle)
 {
-  FEdgeIndex EdgeIndex0;
-  FHalfEdge& Edge0 = New(EdgeIndex0);
-  FEdgeIndex EdgeIndex1;
-  FHalfEdge& Edge1 = New(EdgeIndex1);
+  FEdgeHandle Edge0Handle;
+  FHalfEdge& Edge0 = New(Edge0Handle);
+  FEdgeHandle Edge1Handle;
+  FHalfEdge& Edge1 = New(Edge1Handle);
 
-  Edge0.AdjacentEdgeIndex = EdgeIndex1;
-  Edge1.AdjacentEdgeIndex = EdgeIndex0;
+  Edge0.AdjacentEdge = Edge1Handle;
+  Edge0.Face = FaceHandle;
+  Edge1.AdjacentEdge = Edge0Handle;
 
-  return EdgeIndex0;
+  return Edge0Handle;
 }
 
-FEdgeIndex UHedgeKernel::MakeEdgePair(FFaceHandle FaceIndex)
+void UHedgeKernel::SetFace(FFaceHandle FaceHandle, FEdgeHandle const RootEdgeHandle)
 {
-  FEdgeIndex EdgeIndex0;
-  FHalfEdge& Edge0 = New(EdgeIndex0);
-  FEdgeIndex EdgeIndex1;
-  FHalfEdge& Edge1 = New(EdgeIndex1);
+  auto& Face = New(FaceHandle);
+  Face.RootEdge = RootEdgeHandle;
 
-  Edge0.AdjacentEdgeIndex = EdgeIndex1;
-  Edge0.FaceIndex = FaceIndex;
-  Edge1.AdjacentEdgeIndex = EdgeIndex0;
-
-  return EdgeIndex0;
-}
-
-void UHedgeKernel::SetFace(FFaceHandle FaceIndex, FEdgeIndex const RootEdgeIndex)
-{
-  auto& Face = New(FaceIndex);
-  Face.RootEdgeIndex = RootEdgeIndex;
-
-  auto CurrentEdgeIndex = RootEdgeIndex;
-  while (CurrentEdgeIndex)
+  auto CurrentEdgeHandle = RootEdgeHandle;
+  while (CurrentEdgeHandle)
   {
-    auto& Edge = Get(CurrentEdgeIndex);
-    Edge.FaceIndex = FaceIndex;
+    auto& Edge = Get(CurrentEdgeHandle);
+    Edge.Face = FaceHandle;
 
-    check(Edge.NextEdgeIndex != CurrentEdgeIndex);
-    if (Edge.NextEdgeIndex == RootEdgeIndex)
+    check(Edge.NextEdge != CurrentEdgeHandle);
+    if (Edge.NextEdge == RootEdgeHandle)
     {
       break;
     }
 
-    CurrentEdgeIndex = Edge.NextEdgeIndex;
+    CurrentEdgeHandle = Edge.NextEdge;
   }
 }
 
 FVertexHandle UHedgeKernel::ConnectEdges(
-  FEdgeIndex const EdgeIndexA, 
-  FPointHandle const PointIndex, 
-  FEdgeIndex const EdgeIndexB)
+  FEdgeHandle const EdgeHandleA, 
+  FPointHandle const PointHandle, 
+  FEdgeHandle const EdgeHandleB)
 {
-  FHalfEdge& EdgeA = Get(EdgeIndexA);
-  FHalfEdge& EdgeB = Get(EdgeIndexB);
+  FHalfEdge& EdgeA = Get(EdgeHandleA);
+  FHalfEdge& EdgeB = Get(EdgeHandleB);
 
-  FVertexHandle VertexIndex;
-  FVertex& Vertex = New(VertexIndex);
+  FVertexHandle VertexHandle;
+  FVertex& Vertex = New(VertexHandle);
 
-  Vertex.PointIndex = PointIndex;
-  Vertex.EdgeIndex = EdgeIndexB;
+  Vertex.Point = PointHandle;
+  Vertex.Edge = EdgeHandleB;
 
-  EdgeA.NextEdgeIndex = EdgeIndexB;
-  EdgeB.PrevEdgeIndex = EdgeIndexA;
-  EdgeB.VertexIndex = VertexIndex;
+  EdgeA.NextEdge = EdgeHandleB;
+  EdgeB.PrevEdge = EdgeHandleA;
+  EdgeB.Vertex = VertexHandle;
 
-  if (IsValidIndex(PointIndex))
+  if (IsValidHandle(PointHandle))
   {
-    FPoint& Point = Get(PointIndex);
-    Point.Vertices.Add(VertexIndex);
+    FPoint& Point = Get(PointHandle);
+    Point.Vertices.Add(VertexHandle);
   }
 
-  return VertexIndex;
+  return VertexHandle;
 }

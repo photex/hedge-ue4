@@ -7,37 +7,37 @@
 FPxVertex FPxHalfEdge::Vertex() const
 {
   auto& Edge = GetElement();
-  return FPxVertex(Kernel, Edge.VertexIndex);
+  return FPxVertex(Kernel, Edge.Vertex);
 }
 
 FPxFace FPxHalfEdge::Face() const
 {
   auto& Edge = GetElement();
-  return FPxFace(Kernel, Edge.FaceIndex);
+  return FPxFace(Kernel, Edge.Face);
 }
 
 FPxHalfEdge FPxHalfEdge::Next() const
 {
   auto& Edge = GetElement();
-  return FPxHalfEdge(Kernel, Edge.NextEdgeIndex);
+  return FPxHalfEdge(Kernel, Edge.NextEdge);
 }
 
 FPxHalfEdge FPxHalfEdge::Prev() const
 {
   auto& Edge = GetElement();
-  return FPxHalfEdge(Kernel, Edge.PrevEdgeIndex);
+  return FPxHalfEdge(Kernel, Edge.PrevEdge);
 }
 
 FPxHalfEdge FPxHalfEdge::Adjacent() const
 {
   auto& Edge = GetElement();
-  return FPxHalfEdge(Kernel, Edge.AdjacentEdgeIndex);
+  return FPxHalfEdge(Kernel, Edge.AdjacentEdge);
 }
 
 bool FPxHalfEdge::IsBoundary() const
 {
   auto& Edge = GetElement();
-  if (!Edge.FaceIndex)
+  if (!Edge.Face)
   {
     return true;
   }
@@ -47,7 +47,7 @@ bool FPxHalfEdge::IsBoundary() const
   // proxy we recurse into the nothing.
   // Is this a .. bad .. design?
   auto& AdjacentEdge = Adjacent().GetElement();
-  if (!AdjacentEdge.FaceIndex)
+  if (!AdjacentEdge.Face)
   {
     return true;
   }
@@ -74,19 +74,19 @@ FHalfEdgeVertices FPxHalfEdge::GetVertices() const
 FPxHalfEdge FPxFace::RootEdge() const
 {
   auto& Face = GetElement();
-  return FPxHalfEdge(Kernel, Face.RootEdgeIndex);
+  return FPxHalfEdge(Kernel, Face.RootEdge);
 }
 
 FPxHalfEdge FPxVertex::Edge() const
 {
   auto& Vertex = GetElement();
-  return FPxHalfEdge(Kernel, Vertex.EdgeIndex);
+  return FPxHalfEdge(Kernel, Vertex.Edge);
 }
 
 FPxPoint FPxVertex::Point() const
 {
   auto& Vertex = GetElement();
-  return FPxPoint(Kernel, Vertex.PointIndex);
+  return FPxPoint(Kernel, Vertex.Point);
 }
 
 FVector FPxPoint::Position() const
@@ -101,7 +101,7 @@ void FPxPoint::SetPosition(FVector Position) const
   Point.Position = MoveTemp(Position);
 }
 
-FVertexIndexSet& FPxPoint::Vertices() const
+FVertexSet& FPxPoint::Vertices() const
 {
   auto& Point = GetElement();
   return Point.Vertices;

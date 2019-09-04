@@ -12,7 +12,7 @@ using TRemapTable = TMap<ElementIndexType, ElementIndexType>;
 
 using FPointRemapTable = TRemapTable<FPointHandle>;
 using FVertexRemapTable = TRemapTable<FVertexHandle>;
-using FEdgeRemapTable = TRemapTable<FEdgeIndex>;
+using FEdgeRemapTable = TRemapTable<FEdgeHandle>;
 using FFaceRemapTable = TRemapTable<FFaceHandle>;
 
 struct FRemapData
@@ -35,7 +35,7 @@ struct FRemapData
  *       of the element id types of that module, I believe this will end
  *       up getting deprecated along with the our index type.
  */
-template<typename ElementType, typename ElementIndexType>
+template<typename ElementType, typename ElementHandleType>
 class THedgeElementBuffer
 {
   TSparseArray<ElementType> Elements;
@@ -52,46 +52,46 @@ public:
     Elements.Reserve(Count);
   }
 
-  FORCEINLINE ElementIndexType Add(ElementType&& Element)
+  FORCEINLINE ElementHandleType Add(ElementType&& Element)
   {
-    auto Offset = Elements.Add(Element);
-    return ElementIndexType(Offset, Generation);
+    auto Index = Elements.Add(Element);
+    return ElementHandleType(Index, Generation);
   }
 
-  FORCEINLINE ElementType& Get(ElementIndexType Index)
+  FORCEINLINE ElementType& Get(ElementHandleType const Handle)
   {
-    auto const Offset = Index.GetOffset();
-    check(Elements.IsAllocated(Offset));
-    return Elements[Offset];
+    auto const Index = Handle.GetIndex();
+    check(Elements.IsAllocated(Index));
+    return Elements[Index];
   }
 
-  FORCEINLINE void Remove(ElementIndexType Index)
+  FORCEINLINE void Remove(ElementHandleType Handle)
   {
-    auto const Offset = Index.GetOffset();
-    check(Elements.IsAllocated(Offset));
-    Elements.RemoveAtUninitialized(Offset);
+    auto const Index = Handle.GetIndex();
+    check(Elements.IsAllocated(Index));
+    Elements.RemoveAtUninitialized(Index);
   }
 
-  FORCEINLINE ElementIndexType New()
+  FORCEINLINE ElementHandleType New()
   {
-    auto Offset = Elements.Add(ElementType());
-    return ElementIndexType(Offset, Generation);
+    auto Index = Elements.Add(ElementType());
+    return ElementHandleType(Index, Generation);
   }
 
   template<typename... ArgsType>
-  FORCEINLINE ElementIndexType New(ArgsType... Args)
+  FORCEINLINE ElementHandleType New(ArgsType... Args)
   {
     return Add(ElementType(std::forward<ArgsType>(Args)...));
   }
 
-  FORCEINLINE bool IsValidIndex(ElementIndexType const Index) const
+  FORCEINLINE bool IsValidHandle(ElementHandleType const Handle) const
   {
-    uint32 const IndexGeneration = Index.GetGeneration();
-    FOffset const IndexOffset = Index.GetOffset();
-    bool const IsValid = Elements.IsValidIndex(IndexOffset);
-    if (IndexGeneration != HEDGE_IGNORED_GENERATION)
+    uint32 const HandleGeneration = Handle.GetGeneration();
+    FElementIndex const Index = Handle.GetIndex();
+    bool const IsValid = Elements.IsValidIndex(Index);
+    if (HandleGeneration != HEDGE_IGNORED_GENERATION)
     {
-      return IndexGeneration == Generation && IsValid;
+      return HandleGeneration == Generation && IsValid;
     }
     return IsValid;
   }
@@ -99,22 +99,22 @@ public:
   // Using the same approach as the MeshDescription module because that
   // is just a heck of a lot easier than the stuff I did before when
   // trying to just reuse the container and sort/swap elements around.
-  void Defrag(TRemapTable<ElementIndexType>& OutRemapTable)
+  void Defrag(TRemapTable<ElementHandleType>& OutRemapTable)
   {
     auto PreviousGeneration = Generation;
     ++Generation;
 
     OutRemapTable.Empty(Elements.GetMaxIndex());
-    OutRemapTable.Add(ElementIndexType(), ElementIndexType());
+    OutRemapTable.Add(ElementHandleType(), ElementHandleType());
 
     TSparseArray<ElementType> NewBuffer;
     for (typename TSparseArray<ElementType>::TIterator It( Elements ); It; ++It)
     {
-      uint32 const PreviousOffset = It.GetIndex();
-      uint32 const NewOffset = NewBuffer.Add(MoveTemp(*It));
+      uint32 const PreviousIndex = It.GetIndex();
+      uint32 const NewIndex = NewBuffer.Add(MoveTemp(*It));
       OutRemapTable.Add(
-        ElementIndexType(PreviousOffset, PreviousGeneration), 
-        ElementIndexType(NewOffset, Generation));
+        ElementHandleType(PreviousIndex, PreviousGeneration), 
+        ElementHandleType(NewIndex, Generation));
     }
     Elements = MoveTemp(NewBuffer);
   }
@@ -142,7 +142,7 @@ class UHedgeKernel final : public UObject
 {
   GENERATED_BODY()
 
-  THedgeElementBuffer<FHalfEdge, FEdgeIndex> Edges;
+  THedgeElementBuffer<FHalfEdge, FEdgeHandle> Edges;
   THedgeElementBuffer<FVertex, FVertexHandle> Vertices;
   THedgeElementBuffer<FFace, FFaceHandle> Faces;
   THedgeElementBuffer<FPoint, FPointHandle> Points;
@@ -154,31 +154,31 @@ class UHedgeKernel final : public UObject
 
 public:
 
-  bool IsValidIndex(FEdgeIndex Index) const;
-  bool IsValidIndex(FFaceHandle Index) const;
-  bool IsValidIndex(FVertexHandle Index) const;
-  bool IsValidIndex(FPointHandle Index) const;
+  bool IsValidHandle(FEdgeHandle Handle) const;
+  bool IsValidHandle(FFaceHandle Handle) const;
+  bool IsValidHandle(FVertexHandle Handle) const;
+  bool IsValidHandle(FPointHandle Handle) const;
 
-  FHalfEdge& Get(FEdgeIndex Index);
-  FFace& Get(FFaceHandle Index);
-  FVertex& Get(FVertexHandle Index);
-  FPoint& Get(FPointHandle Index);
+  FHalfEdge& Get(FEdgeHandle Handle);
+  FFace& Get(FFaceHandle Handle);
+  FVertex& Get(FVertexHandle Handle);
+  FPoint& Get(FPointHandle Handle);
 
-  FHalfEdge& New(FEdgeIndex& OutIndex);
-  FFace& New(FFaceHandle& OutIndex);
-  FVertex& New(FVertexHandle& OutIndex);
-  FPoint& New(FPointHandle& OutIndex);
-  FPoint& New(FPointHandle& OutIndex, FVector Position);
+  FHalfEdge& New(FEdgeHandle& OutHandle);
+  FFace& New(FFaceHandle& OutHandle);
+  FVertex& New(FVertexHandle& OutHandle);
+  FPoint& New(FPointHandle& OutHandle);
+  FPoint& New(FPointHandle& OutHandle, FVector Position);
 
-  FEdgeIndex Add(FHalfEdge&& Edge);
+  FEdgeHandle Add(FHalfEdge&& Edge);
   FFaceHandle Add(FFace&& Face);
   FVertexHandle Add(FVertex&& Vertex);
   FPointHandle Add(FPoint&& Point);
 
-  void Remove(FEdgeIndex Index);
-  void Remove(FFaceHandle Index);
-  void Remove(FVertexHandle Index);
-  void Remove(FPointHandle Index);
+  void Remove(FEdgeHandle Handle);
+  void Remove(FFaceHandle Handle);
+  void Remove(FVertexHandle Handle);
+  void Remove(FPointHandle Handle);
 
   uint32 NumPoints() const;
   uint32 NumVertices() const;
@@ -192,26 +192,20 @@ public:
   void Defrag();
 
   /**
-   * Create an empty edge and it's adjacent edge.
-   * @returns The index of the first edge.
-   */
-  FEdgeIndex MakeEdgePair();
-
-  /**
    * Create an empty edge and it's adjacent edge. Associate
    * the first edge with the specified face.
    * @returns The index of the first edge.
    */
-  FEdgeIndex MakeEdgePair(FFaceHandle FaceIndex);
+  FEdgeHandle MakeEdgePair(FFaceHandle FaceHandle = FFaceHandle::Invalid);
 
   /**
    * Assigns all the connected edges to the specified face and assigns
    * the specified edge index to the face.
    *
-   * @param FaceIndex: The face to assign and update.
-   * @param RootEdgeIndex: The first edge of a loop which forms the face
+   * @param FaceHandle: The face to assign and update.
+   * @param RootEdgeHandle: The first edge of a loop which forms the face
    */
-  void SetFace(FFaceHandle FaceIndex, FEdgeIndex RootEdgeIndex);
+  void SetFace(FFaceHandle FaceHandle, FEdgeHandle RootEdgeHandle);
 
   /**
    * Connect the two edges specified with a new vertex associated with
@@ -219,11 +213,11 @@ public:
    *
    * (...)[EA] -> (V<P>)[EB] -> ...
    *
-   * @param EdgeIndexA: Edge which should point to EdgeIndexB as 'next'
-   * @param PointIndex: Point to associate with the new vertex
-   * @param EdgeIndexB: Edge originating at the new vertex pointing to EdgeIndexA as 'previous'
+   * @param EdgeHandleA: Edge which should point to EdgeIndexB as 'next'
+   * @param PointHandle: Point to associate with the new vertex
+   * @param EdgeHandleB: Edge originating at the new vertex pointing to EdgeIndexA as 'previous'
    * @returns The index to the newly created vertex.
    */
   FVertexHandle ConnectEdges(
-    FEdgeIndex EdgeIndexA, FPointHandle PointIndex, FEdgeIndex EdgeIndexB);
+    FEdgeHandle EdgeHandleA, FPointHandle PointHandle, FEdgeHandle EdgeHandleB);
 };

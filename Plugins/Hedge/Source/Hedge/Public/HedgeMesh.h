@@ -13,8 +13,6 @@ struct FPxPoint;
 
 class UHedgeKernel;
 class UHedgeMesh;
-class UHedgeMeshBuilder;
-class UHedgeElementLoopBuilder;
 
 
 /**
@@ -53,10 +51,10 @@ public:
 
   void GetStats(FHedgeMeshStats& OutStats) const;
 
-  FPxFace Face(FFaceHandle const& Index) const;
-  FPxHalfEdge Edge(FEdgeIndex const& Index) const;
-  FPxPoint Point(FPointHandle const& Index) const;
-  FPxVertex Vertex(FVertexHandle const& Index) const;
+  FPxFace Face(FFaceHandle const& Handle) const;
+  FPxHalfEdge Edge(FEdgeHandle const& Handle) const;
+  FPxPoint Point(FPointHandle const& Handle) const;
+  FPxVertex Vertex(FVertexHandle const& Handle) const;
 
   /**
    * Given an array of positions, new points are added to the mesh.
@@ -87,21 +85,21 @@ public:
    *        has a valid vertex which has a valid point and the 'next' edge from there
    *        also has a valid point.
    */
-  FFaceHandle AddFace(FEdgeIndex const& RootEdgeIndex, TArray<FPointHandle> const& Points);
+  FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, TArray<FPointHandle> const& Points);
   /**
    * Given an edge and an array of points; Create all required mesh elements to
    * create a new face (triangle) extending from the specified edge.
    *
    * @note: It is assumed that the specified edge is a suitable boundary edge to form the face.
    */
-  FFaceHandle AddFace(FEdgeIndex const& RootEdgeIndex, FPointHandle const& PointIndex);
+  FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, FPointHandle const& PointIndex);
   /**
    * Given a list of edges; Connect each edge and create a new face.
    *
    * @note: It is assumed that the specified edges are "related" in such a way that they
    *        can be connected to form a face.
    */
-  FFaceHandle AddFace(TArray<FEdgeIndex> const& Edges);
+  FFaceHandle AddFace(TArray<FEdgeHandle> const& Edges);
 
   /**
    * Removes the specified edge, and associated elements.
@@ -115,20 +113,20 @@ public:
    * If this edge has a non-boundary adjacent edge then we apply
    * the dissolve to it as well.
    */
-  void Dissolve(FEdgeIndex Index);
+  void Dissolve(FEdgeHandle Handle);
 
   /**
    * Removes the specified face and updates the associated edges.
    */
-  void Dissolve(FFaceHandle Index);
+  void Dissolve(FFaceHandle Handle);
 
   /**
    * Oh my
    */
-  void Dissolve(FVertexHandle Index);
+  void Dissolve(FVertexHandle Handle);
 
   /**
    * Nuke it from orbit why dontcha
    */
-  void Dissolve(FPointHandle Index);
+  void Dissolve(FPointHandle Handle);
 };

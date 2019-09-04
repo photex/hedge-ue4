@@ -11,24 +11,28 @@ struct FFaceTriangle;
 struct FVertex;
 struct FPoint;
 
-struct FEdgeIndex;
+struct FEdgeHandle;
 struct FFaceHandle;
 struct FVertexHandle;
 struct FPointHandle;
 
 using FHedgeTriangleArray = TArray<FFaceTriangle>;
 
-using FFaceIndexSet = TSet<FFaceHandle>;
-using FVertexIndexSet = TSet<FVertexHandle>;
+using FFaceSet = TSet<FFaceHandle>;
+using FVertexSet = TSet<FVertexHandle>;
 
 /// Determines the upper limit of how many components can be added to a mesh.
-using FOffset = uint32;
-#define HEDGE_INVALID_OFFSET TNumericLimits<FOffset>::Max()
+using FElementIndex = uint32;
+using FElementGeneration = uint32;
+#define HEDGE_INVALID_INDEX TNumericLimits<FElementIndex>::Max()
 #define HEDGE_IGNORED_GENERATION 0
 
 /**
- * Element indices encode an offset (their 'index' into a buffer)
- * and an optional generation.
+ * Element handles encode an index and an optional generation.
+ *
+ * The generation field is used to invalidate handles returned by the
+ * kernel after a defrag ("compact") operation was performed as many
+ * element indices will have been invalidated.
  */
 USTRUCT(BlueprintType)
 struct FElementHandle
@@ -36,36 +40,36 @@ struct FElementHandle
   GENERATED_BODY()
 
   explicit FElementHandle() noexcept
-    : Offset(HEDGE_INVALID_OFFSET)
+    : Index(HEDGE_INVALID_INDEX)
     , Generation(HEDGE_IGNORED_GENERATION)
   {
   }
 
-  explicit FElementHandle(FOffset const Offset) noexcept
-    : Offset(Offset)
+  explicit FElementHandle(FElementIndex const Index) noexcept
+    : Index(Index)
     , Generation(HEDGE_IGNORED_GENERATION)
   {
   }
 
-  explicit FElementHandle(FOffset const Offset, uint32 const Generation) noexcept
-    : Offset(Offset)
+  explicit FElementHandle(FElementIndex const Index, uint32 const Generation) noexcept
+    : Index(Index)
     , Generation(Generation)
   {
   }
 
-  FORCEINLINE FOffset GetOffset() const
+  FORCEINLINE FElementIndex GetIndex() const
   {
-    return Offset;
+    return Index;
   }
 
-  FORCEINLINE uint32 GetGeneration() const
+  FORCEINLINE FElementGeneration GetGeneration() const
   {
     return Generation;
   }
 
   void Reset()
   {
-    Offset = HEDGE_INVALID_OFFSET;
+    Index = HEDGE_INVALID_INDEX;
     Generation = HEDGE_IGNORED_GENERATION;
   }
 
@@ -76,20 +80,20 @@ struct FElementHandle
 
   bool operator==(FElementHandle const& Other) const
   {
-    bool const bOffsetMatches = Offset == Other.Offset;
+    bool const bIndexMatches = Index == Other.Index;
     bool const bTestGeneration = Generation != HEDGE_IGNORED_GENERATION &&
       Other.Generation != HEDGE_IGNORED_GENERATION;
 
     if (bTestGeneration)
     {
-      return bOffsetMatches && Generation == Other.Generation;
+      return bIndexMatches && Generation == Other.Generation;
     }
-    return bOffsetMatches;
+    return bIndexMatches;
   }
 
   friend bool operator<(FElementHandle const& Lhs, FElementHandle const& Rhs)
   {
-    return Lhs.Offset < Rhs.Offset;
+    return Lhs.Index < Rhs.Index;
   }
 
   friend bool operator>(FElementHandle const& Lhs, FElementHandle const& Rhs)
@@ -99,40 +103,40 @@ struct FElementHandle
 
   explicit operator bool() const noexcept
   {
-    return Offset < HEDGE_INVALID_OFFSET;
+    return Index < HEDGE_INVALID_INDEX;
   }
 
   FString ToString() const
   {
-    return (Offset == HEDGE_INVALID_OFFSET)
+    return (Index == HEDGE_INVALID_INDEX)
              ? TEXT("Invalid")
-             : FString::Printf(TEXT("%d"), Offset);
+             : FString::Printf(TEXT("%d"), Index);
   }
 
   friend FArchive& operator<<(FArchive& Ar, FElementHandle& Element)
   {
     // TODO: We need to serialize the generation, probably fixed at '1'
-    Ar << Element.Offset;
+    Ar << Element.Index;
     return Ar;
   }
 
 protected:
-  FOffset Offset;
-  uint32 Generation;
+  FElementIndex Index;
+  FElementGeneration Generation;
 };
 
 
 USTRUCT(BlueprintType)
-struct FEdgeIndex : public FElementHandle
+struct FEdgeHandle : public FElementHandle
 {
   GENERATED_BODY()
   using FElementHandle::FElementHandle;
-  FORCEINLINE friend uint32 GetTypeHash(FEdgeIndex const& Other)
+  FORCEINLINE friend uint32 GetTypeHash(FEdgeHandle const& Other)
   {
-    return GetTypeHash(Other.Offset);
+    return GetTypeHash(Other.Index);
   }
 
-  HEDGE_API static const FEdgeIndex Invalid;
+  HEDGE_API static const FEdgeHandle Invalid;
 };
 
 
@@ -143,7 +147,7 @@ struct FFaceHandle : public FElementHandle
   using FElementHandle::FElementHandle;
   FORCEINLINE friend uint32 GetTypeHash(FFaceHandle const& Other)
   {
-    return GetTypeHash(Other.Offset);
+    return GetTypeHash(Other.Index);
   }
 
   HEDGE_API static const FFaceHandle Invalid;
@@ -157,7 +161,7 @@ struct FVertexHandle : public FElementHandle
   using FElementHandle::FElementHandle;
   FORCEINLINE friend uint32 GetTypeHash(FVertexHandle const& Other)
   {
-    return GetTypeHash(Other.Offset);
+    return GetTypeHash(Other.Index);
   }
 
   HEDGE_API static const FVertexHandle Invalid;
@@ -171,7 +175,7 @@ struct FPointHandle : public FElementHandle
   using FElementHandle::FElementHandle;
   FORCEINLINE friend uint32 GetTypeHash(FPointHandle const& Other)
   {
-    return GetTypeHash(Other.Offset);
+    return GetTypeHash(Other.Index);
   }
 
   HEDGE_API static const FPointHandle Invalid;

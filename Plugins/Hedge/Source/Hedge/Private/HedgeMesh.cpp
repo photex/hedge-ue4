@@ -20,24 +20,24 @@ void UHedgeMesh::GetStats(FHedgeMeshStats& OutStats) const
   OutStats.NumFaces = Kernel->NumFaces();
 }
 
-FPxFace UHedgeMesh::Face(FFaceHandle const& Index) const
+FPxFace UHedgeMesh::Face(FFaceHandle const& Handle) const
 {
-  return FPxFace(Kernel, Index);
+  return FPxFace(Kernel, Handle);
 }
 
-FPxHalfEdge UHedgeMesh::Edge(FEdgeIndex const& Index) const
+FPxHalfEdge UHedgeMesh::Edge(FEdgeHandle const& Handle) const
 {
-  return FPxHalfEdge(Kernel, Index);
+  return FPxHalfEdge(Kernel, Handle);
 }
 
-FPxPoint UHedgeMesh::Point(FPointHandle const& Index) const
+FPxPoint UHedgeMesh::Point(FPointHandle const& Handle) const
 {
-  return FPxPoint(Kernel, Index);
+  return FPxPoint(Kernel, Handle);
 }
 
-FPxVertex UHedgeMesh::Vertex(FVertexHandle const& Index) const
+FPxVertex UHedgeMesh::Vertex(FVertexHandle const& Handle) const
 {
-  return FPxVertex(Kernel, Index);
+  return FPxVertex(Kernel, Handle);
 }
 
 TArray<FPointHandle> UHedgeMesh::AddPoints(
@@ -51,14 +51,14 @@ TArray<FPointHandle> UHedgeMesh::AddPoints(
   FVector const Positions[], 
   uint32 const PositionCount) const
 {
-  TArray<FPointHandle> OutPointIndices;
-  OutPointIndices.Reserve(PositionCount);
+  TArray<FPointHandle> OutPointHandles;
+  OutPointHandles.Reserve(PositionCount);
   for (uint32 i = 0; i < PositionCount; ++i)
   {
-    auto PointIndex = Kernel->Add(FPoint(Positions[i]));
-    OutPointIndices.Push(PointIndex);
+    auto PointHandle = Kernel->Add(FPoint(Positions[i]));
+    OutPointHandles.Push(PointHandle);
   }
-  return MoveTemp(OutPointIndices);
+  return MoveTemp(OutPointHandles);
 }
 
 FFaceHandle UHedgeMesh::AddFace(TArray<FPointHandle> const& Points)
@@ -68,38 +68,38 @@ FFaceHandle UHedgeMesh::AddFace(TArray<FPointHandle> const& Points)
     ErrorLog("Unable to add a new face to mesh without at least 3 points.");
     return FFaceHandle::Invalid;
   }
-  FFaceHandle FaceIndex;
-  FFace& Face = Kernel->New(FaceIndex);
+  FFaceHandle FaceHandle;
+  FFace& Face = Kernel->New(FaceHandle);
   
   FPointHandle const RootPoint = Points[0];
-  FEdgeIndex const RootEdge = Kernel->MakeEdgePair();
+  FEdgeHandle const RootEdge = Kernel->MakeEdgePair();
   auto PreviousEdge = RootEdge;
   for (auto i = 1; i < Points.Num(); ++i)
   {
     FPointHandle const CurrentPoint = Points[i];
-    FEdgeIndex const CurrentEdge = Kernel->MakeEdgePair(FaceIndex);
+    FEdgeHandle const CurrentEdge = Kernel->MakeEdgePair(FaceHandle);
 
     Kernel->ConnectEdges(PreviousEdge, CurrentPoint, CurrentEdge);
 
     PreviousEdge = CurrentEdge;
   }
   Kernel->ConnectEdges(PreviousEdge, RootPoint, RootEdge);
-  Face.RootEdgeIndex = RootEdge;
-  return FaceIndex;
+  Face.RootEdge = RootEdge;
+  return FaceHandle;
 }
 
 FFaceHandle UHedgeMesh::AddFace(
-  FEdgeIndex const& RootEdge, TArray<FPointHandle> const& Points)
+  FEdgeHandle const& RootEdge, TArray<FPointHandle> const& Points)
 {
   if (Points.Num() < 1)
   {
     ErrorLog("Unable to add a new face to mesh without at least 1 point.");
     return FFaceHandle::Invalid;
   }
-  FFaceHandle FaceIndex;
-  FFace& Face = Kernel->New(FaceIndex);
+  FFaceHandle FaceHandle;
+  FFace& Face = Kernel->New(FaceHandle);
 
-  auto const RootPoint = Edge(RootEdge).Adjacent().Vertex().Point().GetIndex();
+  auto const RootPoint = Edge(RootEdge).Adjacent().Vertex().Point().GetHandle();
   auto CurrentEdge = RootEdge;
   auto CurrentPoint = RootPoint;
   auto PreviousEdge = RootEdge;
@@ -107,52 +107,52 @@ FFaceHandle UHedgeMesh::AddFace(
   for (auto i = 0; i < Points.Num(); ++i)
   {
     CurrentPoint = Points[i];
-    CurrentEdge = Kernel->MakeEdgePair(FaceIndex);
+    CurrentEdge = Kernel->MakeEdgePair(FaceHandle);
     Kernel->ConnectEdges(PreviousEdge, PreviousPoint, CurrentEdge);
 
     PreviousEdge = CurrentEdge;
     PreviousPoint = CurrentPoint;
   }
-  CurrentPoint = Edge(RootEdge).Adjacent().Next().Vertex().Point().GetIndex();
-  CurrentEdge = Kernel->MakeEdgePair(FaceIndex);
+  CurrentPoint = Edge(RootEdge).Adjacent().Next().Vertex().Point().GetHandle();
+  CurrentEdge = Kernel->MakeEdgePair(FaceHandle);
   Kernel->ConnectEdges(PreviousEdge, PreviousPoint, CurrentEdge);
   Kernel->ConnectEdges(CurrentEdge, CurrentPoint, RootEdge);
-  Face.RootEdgeIndex = RootEdge;
-  return FaceIndex;
+  Face.RootEdge = RootEdge;
+  return FaceHandle;
 }
 
 FFaceHandle UHedgeMesh::AddFace(
-  FEdgeIndex const& E0, FPointHandle const& P1)
+  FEdgeHandle const& E0, FPointHandle const& P1)
 {
-  FFaceHandle FaceIndex;
-  FFace& Face = Kernel->New(FaceIndex);
-  Face.RootEdgeIndex = E0;
+  FFaceHandle FaceHandle;
+  FFace& Face = Kernel->New(FaceHandle);
+  Face.RootEdge = E0;
 
   auto& Edge0 = Kernel->Get(E0);
-  Edge0.FaceIndex = FaceIndex;
+  Edge0.Face = FaceHandle;
 
-  auto const P0 = Edge(E0).Adjacent().Vertex().Point().GetIndex();
-  auto const P2 = Edge(E0).Adjacent().Next().Vertex().Point().GetIndex();
+  auto const P0 = Edge(E0).Adjacent().Vertex().Point().GetHandle();
+  auto const P2 = Edge(E0).Adjacent().Next().Vertex().Point().GetHandle();
 
-  auto const E1 = Kernel->MakeEdgePair(FaceIndex);
-  auto const E2 = Kernel->MakeEdgePair(FaceIndex);
+  auto const E1 = Kernel->MakeEdgePair(FaceHandle);
+  auto const E2 = Kernel->MakeEdgePair(FaceHandle);
 
   Kernel->ConnectEdges(E0, P0, E1);
   Kernel->ConnectEdges(E1, P1, E2);
   Kernel->ConnectEdges(E2, P2, E0);
 
-  return FaceIndex;
+  return FaceHandle;
 }
 
-FFaceHandle UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
+FFaceHandle UHedgeMesh::AddFace(TArray<FEdgeHandle> const& Edges)
 {
   if (Edges.Num() < 3)
   {
     ErrorLog("Unable to create a face without at least 3 edges.");
     return FFaceHandle::Invalid;
   }
-  FFaceHandle FaceIndex;
-  FFace& Face = Kernel->New(FaceIndex);
+  FFaceHandle FaceHandle;
+  FFace& Face = Kernel->New(FaceHandle);
 
   auto const RootEdge = Edges[0];
   auto LastEdge = RootEdge;
@@ -160,33 +160,33 @@ FFaceHandle UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
   for (auto i = 1; i < Edges.Num(); ++i)
   {
     CurrentEdge = Edges[i];
-    auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetIndex();
+    auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetHandle();
     Kernel->ConnectEdges(LastEdge, Point, CurrentEdge);
-    Kernel->Get(CurrentEdge).FaceIndex = FaceIndex;
+    Kernel->Get(CurrentEdge).Face = FaceHandle;
     LastEdge = CurrentEdge;
   }
-  auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetIndex();
+  auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetHandle();
   Kernel->ConnectEdges(LastEdge, Point, RootEdge);
   
-  return FaceIndex;
+  return FaceHandle;
 }
 
-void UHedgeMesh::Dissolve(FEdgeIndex Index)
+void UHedgeMesh::Dissolve(FEdgeHandle Handle)
 {
   unimplemented();
 }
 
-void UHedgeMesh::Dissolve(FFaceHandle Index)
+void UHedgeMesh::Dissolve(FFaceHandle Handle)
 {
   unimplemented();
 }
 
-void UHedgeMesh::Dissolve(FVertexHandle Index)
+void UHedgeMesh::Dissolve(FVertexHandle Handle)
 {
   unimplemented();
 }
 
-void UHedgeMesh::Dissolve(FPointHandle Index)
+void UHedgeMesh::Dissolve(FPointHandle Handle)
 {
   unimplemented();
 }

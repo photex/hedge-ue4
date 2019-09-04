@@ -15,12 +15,12 @@ struct FPxPoint;
 /**
  * TODO: docs
  */
-template <typename ElementIndexType, typename ElementType>
+template <typename ElementHandleType, typename ElementType>
 struct FPxElement
 {
-  explicit FPxElement(UHedgeKernel* Kernel, ElementIndexType Index) noexcept
+  explicit FPxElement(UHedgeKernel* Kernel, ElementHandleType Handle) noexcept
     : Kernel(Kernel)
-    , Index(Index)
+    , Handle(Handle)
   {
   }
 
@@ -31,31 +31,31 @@ struct FPxElement
 
   FORCEINLINE bool IsValid() const noexcept
   {
-    return Kernel != nullptr && Kernel->IsValidIndex(Index);
+    return Kernel != nullptr && Kernel->IsValidHandle(Handle);
   }
 
   bool operator==(FPxElement const& Other) const
   {
-    return Index == Other.Index && Kernel == Other.Kernel;
+    return Handle == Other.Handle && Kernel == Other.Kernel;
   }
 
   bool operator!=(FPxElement const& Other) const
   {
-    return Index != Other.Index && Kernel != Other.Kernel;
+    return Handle != Other.Handle && Kernel != Other.Kernel;
   }
 
   FORCEINLINE ElementType& GetElement() const
   {
-    return Kernel->Get(Index);
+    return Kernel->Get(Handle);
   }
 
-  FORCEINLINE ElementIndexType GetIndex()
+  FORCEINLINE ElementHandleType GetHandle()
   {
-    return Index;
+    return Handle;
   }
 protected:
   UHedgeKernel* Kernel;
-  ElementIndexType Index;
+  ElementHandleType Handle;
 };
 
 using FHalfEdgePoints = TArray<FPxPoint, TFixedAllocator<2>>;
@@ -64,7 +64,7 @@ using FHalfEdgeVertices = TArray<FPxVertex, TFixedAllocator<2>>;
 /**
  * TODO: docs
  */
-struct FPxHalfEdge : FPxElement<FEdgeIndex, FHalfEdge>
+struct FPxHalfEdge : FPxElement<FEdgeHandle, FHalfEdge>
 {
   using FPxElement::FPxElement;
 
@@ -111,5 +111,5 @@ struct FPxPoint : FPxElement<FPointHandle, FPoint>
   FVector Position() const;
   void SetPosition(FVector Position) const;
 
-  FVertexIndexSet& Vertices() const;
+  FVertexSet& Vertices() const;
 };

@@ -21,16 +21,16 @@ struct FMeshElement
 struct FHalfEdge : FMeshElement
 {
   /// The vertex this edge starts from
-  FVertexHandle VertexIndex = FVertexHandle::Invalid;
+  FVertexHandle Vertex = FVertexHandle::Invalid;
   /// Either the face that this edge contributes to
   /// or 'Invalid' for boundary edges.
-  FFaceHandle FaceIndex = FFaceHandle::Invalid;
+  FFaceHandle Face = FFaceHandle::Invalid;
   /// The next edge in the loop that forms a face.
-  FEdgeIndex NextEdgeIndex = FEdgeIndex::Invalid;
+  FEdgeHandle NextEdge = FEdgeHandle::Invalid;
   /// The previous edge in the loop that forms a face.
-  FEdgeIndex PrevEdgeIndex = FEdgeIndex::Invalid;
+  FEdgeHandle PrevEdge = FEdgeHandle::Invalid;
   /// The adjacent 'twin' half edge.
-  FEdgeIndex AdjacentEdgeIndex = FEdgeIndex::Invalid;
+  FEdgeHandle AdjacentEdge = FEdgeHandle::Invalid;
 };
 
 /**
@@ -42,7 +42,7 @@ struct FHalfEdge : FMeshElement
 struct FFace : FMeshElement
 {
   /// The first edge of a loop that forms the face.
-  FEdgeIndex RootEdgeIndex = FEdgeIndex::Invalid;
+  FEdgeHandle RootEdge = FEdgeHandle::Invalid;
   /// A list of the triangles that compose this face.
   /// (Perhaps empty when the face itself is already a triangle)
   FHedgeTriangleArray Triangles;
@@ -54,9 +54,9 @@ struct FFace : FMeshElement
  */
 struct FFaceTriangle
 {
-  FVertexHandle VertexIndex0 = FVertexHandle::Invalid;
-  FVertexHandle VertexIndex1 = FVertexHandle::Invalid;
-  FVertexHandle VertexIndex2 = FVertexHandle::Invalid;
+  FVertexHandle V0 = FVertexHandle::Invalid;
+  FVertexHandle V1 = FVertexHandle::Invalid;
+  FVertexHandle V2 = FVertexHandle::Invalid;
 };
 
 /**
@@ -68,9 +68,9 @@ struct FFaceTriangle
 struct FVertex : FMeshElement
 {
   /// The point which holds any relevant attributes.
-  FPointHandle PointIndex = FPointHandle::Invalid;
+  FPointHandle Point = FPointHandle::Invalid;
   /// The edge eminating from this vertex.
-  FEdgeIndex EdgeIndex = FEdgeIndex::Invalid;
+  FEdgeHandle Edge = FEdgeHandle::Invalid;
 };
 
 /**
@@ -84,7 +84,7 @@ struct FPoint : FMeshElement
   /// The location of this point.
   FVector Position;
   /// The associated vertices
-  FVertexIndexSet Vertices;
+  FVertexSet Vertices;
 
   FPoint(FVector InPosition)
     : Position(MoveTemp(InPosition))

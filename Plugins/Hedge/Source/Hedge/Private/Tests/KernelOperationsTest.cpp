@@ -8,18 +8,12 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+///////////////////////////////////////////////////////////
+/// Add and remove elements and verify the expected
+/// behaviors and side-effects hold true.
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
   FHedgeKernelOpAddRemoveTest, "Hedge.Kernel.AddAndRemoveElements",
-  EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
-)
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-  FHedgeKernelTriangleTest, "Hedge.Kernel.CreateTriangle",
-  EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
-)
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-  FHedgeKernelDefragTest, "Hedge.Kernel.Defrag",
   EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
 )
 
@@ -36,10 +30,10 @@ bool FHedgeKernelOpAddRemoveTest::RunTest(FString const& Parameters)
     auto const NumPoints = Kernel->NumPoints();
     TestEqual(TEXT("Added four points to mesh"), NumPoints, 4);
   }
-  TestEqual(TEXT("Expected offset for the point0"), PIndex0.GetOffset(), 0);
-  TestEqual(TEXT("Expected offset for the point1"), PIndex1.GetOffset(), 1);
-  TestEqual(TEXT("Expected offset for the point2"), PIndex2.GetOffset(), 2);
-  TestEqual(TEXT("Expected offset for the point3"), PIndex3.GetOffset(), 3);
+  TestEqual(TEXT("Expected offset for the point0"), PIndex0.GetIndex(), 0);
+  TestEqual(TEXT("Expected offset for the point1"), PIndex1.GetIndex(), 1);
+  TestEqual(TEXT("Expected offset for the point2"), PIndex2.GetIndex(), 2);
+  TestEqual(TEXT("Expected offset for the point3"), PIndex3.GetIndex(), 3);
 
   auto& Point1 = Kernel->Get(PIndex1);
   TestEqual(TEXT("No vertices associated yet"), Point1.Vertices.Num(), 0);
@@ -53,12 +47,12 @@ bool FHedgeKernelOpAddRemoveTest::RunTest(FString const& Parameters)
     TestEqual(TEXT("Expected 3 points after removing one."), NumPoints, 3);
   }
   TestFalse(
-    TEXT("The kernel should report PIndex2 as invalid."), Kernel->IsValidIndex(PIndex2));
+    TEXT("The kernel should report PIndex2 as invalid."), Kernel->IsValidHandle(PIndex2));
   auto const PIndex4 = Kernel->Add(FPoint(FVector(2.f, 2.f, 2.f)));
-  TestEqual(TEXT("Expected offset for the next point added."), PIndex4.GetOffset(), 2);
+  TestEqual(TEXT("Expected offset for the next point added."), PIndex4.GetIndex(), 2);
   TestTrue(
     TEXT("The kernel should report PIndex2 as valid again."),
-    Kernel->IsValidIndex(PIndex2));
+    Kernel->IsValidHandle(PIndex2));
 
   auto& Point4 = Kernel->Get(PIndex2);
   TestEqual(TEXT("Expected value for the point4 X position."), Point4.Position.X, 2.f);
@@ -67,6 +61,15 @@ bool FHedgeKernelOpAddRemoveTest::RunTest(FString const& Parameters)
 
   return true;
 }
+
+///////////////////////////////////////////////////////////
+/// Build a triangle using only facilities from the Kernel
+/// and verify the connectivity information is correct.
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+  FHedgeKernelTriangleTest, "Hedge.Kernel.CreateTriangle",
+  EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+)
 
 bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
 {
@@ -88,7 +91,7 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
   auto const VIndex1 = Kernel->ConnectEdges(EIndex1, PIndex2, EIndex2);
   auto const VIndex2 = Kernel->ConnectEdges(EIndex2, PIndex0, EIndex0);
 
-  Face.RootEdgeIndex = EIndex0;
+  Face.RootEdge = EIndex0;
 
   TestEqual(TEXT("Unexpected number of points"), Kernel->NumPoints(), 3);
   TestEqual(TEXT("Unexpected number of edges"), Kernel->NumEdges(), 6);
@@ -100,23 +103,23 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
   TestTrue(TEXT("P2 was missing vertex1 index"), P2.Vertices.Contains(VIndex1));
 
   auto const ValidateEdge = [&Kernel, this](
-    FEdgeIndex const Eindex,
-    FEdgeIndex const Prev,
-    FEdgeIndex const Next,
+    FEdgeHandle const Eindex,
+    FEdgeHandle const Prev,
+    FEdgeHandle const Next,
     FVertexHandle const Vindex,
     FFaceHandle const Findex)
   {
     auto& Edge = Kernel->Get(Eindex);
-    TestTrue(TEXT("Edge points to invalid next edge."), Kernel->IsValidIndex(Next));
-    TestTrue(TEXT("Edge points to invalid prev edge."), Kernel->IsValidIndex(Prev));
+    TestTrue(TEXT("Edge points to invalid next edge."), Kernel->IsValidHandle(Next));
+    TestTrue(TEXT("Edge points to invalid prev edge."), Kernel->IsValidHandle(Prev));
     TestEqual(
-      TEXT("Edge face index did not match specified face."), Edge.FaceIndex, Findex);
+      TEXT("Edge face index did not match specified face."), Edge.Face, Findex);
     TestEqual(
-      TEXT("Edge prev index did not match specified edge."), Edge.PrevEdgeIndex, Prev);
+      TEXT("Edge prev index did not match specified edge."), Edge.PrevEdge, Prev);
     TestEqual(
-      TEXT("Edge next index did not match specified edge."), Edge.NextEdgeIndex, Next);
+      TEXT("Edge next index did not match specified edge."), Edge.NextEdge, Next);
     TestEqual(
-      TEXT("Edge vertex index did not match specified edge."), Edge.VertexIndex, Vindex);
+      TEXT("Edge vertex index did not match specified edge."), Edge.Vertex, Vindex);
   };
 
   ValidateEdge(EIndex0, EIndex2, EIndex1, VIndex2, FIndex0);
@@ -125,6 +128,17 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
 
   return true;
 }
+
+///////////////////////////////////////////////////////////
+/// Build a triangle after adding and removing elements
+/// so that we've artificially created 'gaps' in the
+/// element buffer. Then defrag the buffers and verify
+/// that the elements are correctly remapped.
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+  FHedgeKernelDefragTest, "Hedge.Kernel.Defrag",
+  EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::ProductFilter
+)
 
 bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
 {
@@ -146,9 +160,9 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
     Kernel->Remove(PIndex[1]);
     Kernel->Remove(PIndex[3]);
   }
-  TestEqual(TEXT("PIndex0 != 0."), PIndex0.GetOffset(), 0);
-  TestEqual(TEXT("PIndex1 != 2."), PIndex1.GetOffset(), 2);
-  TestEqual(TEXT("PIndex2 != 4."), PIndex2.GetOffset(), 4);
+  TestEqual(TEXT("PIndex0 != 0."), PIndex0.GetIndex(), 0);
+  TestEqual(TEXT("PIndex1 != 2."), PIndex1.GetIndex(), 2);
+  TestEqual(TEXT("PIndex2 != 4."), PIndex2.GetIndex(), 4);
 
   FFaceHandle FIndex0;
   {
@@ -162,11 +176,11 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
     Kernel->Remove(FIndex[0]);
     Kernel->Remove(FIndex[1]);
   }
-  TestEqual(TEXT("FIndex0 != 2"), FIndex0.GetOffset(), 2);
+  TestEqual(TEXT("FIndex0 != 2"), FIndex0.GetIndex(), 2);
 
-  FEdgeIndex EIndex0, EIndex1, EIndex2;
+  FEdgeHandle EIndex0, EIndex1, EIndex2;
   {
-    FEdgeIndex EIndex[5] = {
+    FEdgeHandle EIndex[5] = {
       Kernel->MakeEdgePair(FIndex0),
       Kernel->MakeEdgePair(FIndex0),
       Kernel->MakeEdgePair(FIndex0),
@@ -179,11 +193,11 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
     Kernel->Remove(EIndex[1]);
     Kernel->Remove(EIndex[2]);
   }
-  TestEqual(TEXT("EIndex0 != 0"), EIndex0.GetOffset(), 0);
-  TestEqual(TEXT("EIndex1 != 6"), EIndex1.GetOffset(), 6);
-  TestEqual(TEXT("EIndex2 != 8"), EIndex2.GetOffset(), 8);
+  TestEqual(TEXT("EIndex0 != 0"), EIndex0.GetIndex(), 0);
+  TestEqual(TEXT("EIndex1 != 6"), EIndex1.GetIndex(), 6);
+  TestEqual(TEXT("EIndex2 != 8"), EIndex2.GetIndex(), 8);
 
-  Kernel->Get(FIndex0).RootEdgeIndex = EIndex0;
+  Kernel->Get(FIndex0).RootEdge = EIndex0;
 
   Kernel->ConnectEdges(EIndex0, PIndex1, EIndex1);
   Kernel->ConnectEdges(EIndex1, PIndex2, EIndex2);
@@ -200,24 +214,24 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   // invalid because they'll have been created with the previous generation
   // value.
 
-  TestFalse(TEXT("PIndex0 is still valid."), Kernel->IsValidIndex(PIndex0));
-  TestFalse(TEXT("PIndex1 is still valid."), Kernel->IsValidIndex(PIndex1)); 
-  TestFalse(TEXT("PIndex2 is still valid."), Kernel->IsValidIndex(PIndex2));
+  TestFalse(TEXT("PIndex0 is still valid."), Kernel->IsValidHandle(PIndex0));
+  TestFalse(TEXT("PIndex1 is still valid."), Kernel->IsValidHandle(PIndex1)); 
+  TestFalse(TEXT("PIndex2 is still valid."), Kernel->IsValidHandle(PIndex2));
 
-  TestFalse(TEXT("FIndex0 is still valid."), Kernel->IsValidIndex(FIndex0));
+  TestFalse(TEXT("FIndex0 is still valid."), Kernel->IsValidHandle(FIndex0));
 
-  TestFalse(TEXT("EIndex0 is still valid."), Kernel->IsValidIndex(EIndex0));
-  TestFalse(TEXT("EIndex1 is still valid."), Kernel->IsValidIndex(EIndex1));
-  TestFalse(TEXT("EIndex2 is still valid."), Kernel->IsValidIndex(EIndex2));
+  TestFalse(TEXT("EIndex0 is still valid."), Kernel->IsValidHandle(EIndex0));
+  TestFalse(TEXT("EIndex1 is still valid."), Kernel->IsValidHandle(EIndex1));
+  TestFalse(TEXT("EIndex2 is still valid."), Kernel->IsValidHandle(EIndex2));
 
   // For the indexes that we expect to still point to data in the  kernel
   // we can just create a new version without the generation value.
-  PIndex0 = FPointHandle(PIndex0.GetOffset());
+  PIndex0 = FPointHandle(PIndex0.GetIndex());
   PIndex1 = FPointHandle(1);
   PIndex2 = FPointHandle(2);
-  TestTrue(TEXT("Updated PIndex0 is valid."), Kernel->IsValidIndex(PIndex0));
-  TestTrue(TEXT("Updated PIndex1 is valid."), Kernel->IsValidIndex(PIndex1));
-  TestTrue(TEXT("Updated PIndex2 is valid."), Kernel->IsValidIndex(PIndex2));
+  TestTrue(TEXT("Updated PIndex0 is valid."), Kernel->IsValidHandle(PIndex0));
+  TestTrue(TEXT("Updated PIndex1 is valid."), Kernel->IsValidHandle(PIndex1));
+  TestTrue(TEXT("Updated PIndex2 is valid."), Kernel->IsValidHandle(PIndex2));
 
   // Check that we get the expected position from PIndex2
   FVector PIndex2Position = Kernel->Get(PIndex2).Position;
@@ -227,16 +241,16 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
 
   // Check that our edges have indexes with the current generation
   uint32 const ExpectedGeneration = 2;
-  EIndex0 = FEdgeIndex(0, ExpectedGeneration);
-  EIndex1 = FEdgeIndex(1, ExpectedGeneration);
+  EIndex0 = FEdgeHandle(0, ExpectedGeneration);
+  EIndex1 = FEdgeHandle(1, ExpectedGeneration);
   auto& Edge0 = Kernel->Get(EIndex0);
   auto& Edge1 = Kernel->Get(EIndex1);
   TestEqual(TEXT("Edge0.NextEdgeIndex.Generation == 2"), 
-    Edge0.NextEdgeIndex.GetGeneration(), ExpectedGeneration);
+    Edge0.NextEdge.GetGeneration(), ExpectedGeneration);
   TestEqual(TEXT("Edge1.PrevEdgeIndex.Generation == 2"), 
-    Edge1.PrevEdgeIndex.GetGeneration(), ExpectedGeneration);
-  TestTrue(TEXT("Edge0.NextEdgeIndex == EIndex1"), Edge0.NextEdgeIndex == EIndex1);
-  TestTrue(TEXT("Edge1.PrevEdgeIndex == EIndex0"), Edge1.PrevEdgeIndex == EIndex0);
+    Edge1.PrevEdge.GetGeneration(), ExpectedGeneration);
+  TestTrue(TEXT("Edge0.NextEdgeIndex == EIndex1"), Edge0.NextEdge == EIndex1);
+  TestTrue(TEXT("Edge1.PrevEdgeIndex == EIndex0"), Edge1.PrevEdge == EIndex0);
 
   // Our mesh stats shouldn't have changed
   TestEqual(TEXT("NumPoints == 3"), Kernel->NumPoints(), 3);
