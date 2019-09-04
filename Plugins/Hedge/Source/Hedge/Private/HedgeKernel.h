@@ -152,6 +152,8 @@ class UHedgeKernel final : public UObject
   void RemapFaces(FFaceRemapTable const& Table);
   void RemapVertices(FVertexRemapTable const& Table);
 
+  void NewEdgePair(FEdgeHandle& OutEdge0, FEdgeHandle& OutEdge1);
+
 public:
 
   bool IsValidHandle(FEdgeHandle Handle) const;
@@ -192,11 +194,29 @@ public:
   void Defrag();
 
   /**
+   * @todo: documentssss
+   */
+  FVertexHandle MakeVertex(
+    FPointHandle PointHandle, 
+    FEdgeHandle EdgeHandle = FEdgeHandle::Invalid);
+
+  /**
    * Create an empty edge and it's adjacent edge. Associate
    * the first edge with the specified face.
    * @returns The index of the first edge.
    */
-  FEdgeHandle MakeEdgePair(FFaceHandle FaceHandle = FFaceHandle::Invalid);
+  FEdgeHandle MakeEdgePair(
+    FPointHandle Point0Handle,
+    FPointHandle Point1Handle,
+    FFaceHandle FaceHandle = FFaceHandle::Invalid);
+
+  /**
+   * @todo: docs pls oh goawed docs
+   */
+  FEdgeHandle MakeEdgePair(
+    FEdgeHandle PreviousEdgeHandle, 
+    FPointHandle PointHandle, 
+    FFaceHandle FaceHandle = FFaceHandle::Invalid);
 
   /**
    * Assigns all the connected edges to the specified face and assigns
@@ -208,16 +228,12 @@ public:
   void SetFace(FFaceHandle FaceHandle, FEdgeHandle RootEdgeHandle);
 
   /**
-   * Connect the two edges specified with a new vertex associated with
-   * the specified point.
+   * Connect the two edges specified via the vertex of the second edge.
    *
    * (...)[EA] -> (V<P>)[EB] -> ...
    *
-   * @param EdgeHandleA: Edge which should point to EdgeIndexB as 'next'
-   * @param PointHandle: Point to associate with the new vertex
-   * @param EdgeHandleB: Edge originating at the new vertex pointing to EdgeIndexA as 'previous'
-   * @returns The index to the newly created vertex.
+   * @param A: HalfEdge which should point to B as 'next'
+   * @param B: HalfEdge which should point to A as 'previous'
    */
-  FVertexHandle ConnectEdges(
-    FEdgeHandle EdgeHandleA, FPointHandle PointHandle, FEdgeHandle EdgeHandleB);
+  void ConnectEdges(FEdgeHandle A, FEdgeHandle B);
 };

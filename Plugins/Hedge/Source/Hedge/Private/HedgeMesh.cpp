@@ -51,14 +51,14 @@ TArray<FPointHandle> UHedgeMesh::AddPoints(
   FVector const Positions[], 
   uint32 const PositionCount) const
 {
-  TArray<FPointHandle> OutPointHandles;
-  OutPointHandles.Reserve(PositionCount);
+  TArray<FPointHandle> OutPointHandle;
+  OutPointHandle.Reserve(PositionCount);
   for (uint32 i = 0; i < PositionCount; ++i)
   {
     auto PointHandle = Kernel->Add(FPoint(Positions[i]));
-    OutPointHandles.Push(PointHandle);
+    OutPointHandle.Push(PointHandle);
   }
-  return MoveTemp(OutPointHandles);
+  return MoveTemp(OutPointHandle);
 }
 
 FFaceHandle UHedgeMesh::AddFace(TArray<FPointHandle> const& Points)

@@ -83,9 +83,9 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
   FFaceHandle FIndex0;
   auto& Face = Kernel->New(FIndex0);
 
-  auto const EIndex0 = Kernel->MakeEdgePair(FIndex0);
-  auto const EIndex1 = Kernel->MakeEdgePair(FIndex0);
-  auto const EIndex2 = Kernel->MakeEdgePair(FIndex0);
+  auto const EIndex0 = Kernel->MakeEdgePair(,, FIndex0);
+  auto const EIndex1 = Kernel->MakeEdgePair(,, FIndex0);
+  auto const EIndex2 = Kernel->MakeEdgePair(,, FIndex0);
 
   auto const VIndex0 = Kernel->ConnectEdges(EIndex0, PIndex1, EIndex1);
   auto const VIndex1 = Kernel->ConnectEdges(EIndex1, PIndex2, EIndex2);
@@ -181,11 +181,11 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   FEdgeHandle EIndex0, EIndex1, EIndex2;
   {
     FEdgeHandle EIndex[5] = {
-      Kernel->MakeEdgePair(FIndex0),
-      Kernel->MakeEdgePair(FIndex0),
-      Kernel->MakeEdgePair(FIndex0),
-      Kernel->MakeEdgePair(FIndex0),
-      Kernel->MakeEdgePair(FIndex0),
+      Kernel->MakeEdgePair(,, FIndex0),
+      Kernel->MakeEdgePair(,, FIndex0),
+      Kernel->MakeEdgePair(,, FIndex0),
+      Kernel->MakeEdgePair(,, FIndex0),
+      Kernel->MakeEdgePair(,, FIndex0),
     };
     EIndex0 = EIndex[0];
     EIndex1 = EIndex[3];

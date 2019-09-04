@@ -366,18 +366,63 @@ void UHedgeKernel::Defrag()
   RemapPoints(RemapData.Points);
 }
 
-FEdgeHandle UHedgeKernel::MakeEdgePair(FFaceHandle FaceHandle)
+FVertexHandle UHedgeKernel::MakeVertex(
+  FPointHandle const PointHandle, 
+  FEdgeHandle const EdgeHandle)
+{
+  FVertexHandle VertexHandle;
+  FVertex& Vertex = New(VertexHandle);
+  Vertex.Point = PointHandle;
+  if (EdgeHandle)
+  {
+    Vertex.Edge = EdgeHandle;
+    Get(Vertex.Edge).Vertex = VertexHandle;
+  }
+  return MoveTemp(VertexHandle);
+}
+
+void UHedgeKernel::NewEdgePair(FEdgeHandle& OutEdge0, FEdgeHandle& OutEdge1)
+{
+  auto& Edge0 = New(OutEdge0);
+  auto& Edge1 = New(OutEdge1);
+  Edge0.AdjacentEdge = OutEdge1;
+  Edge1.AdjacentEdge = OutEdge0;
+}
+
+FEdgeHandle UHedgeKernel::MakeEdgePair(
+  FPointHandle const Point0Handle, 
+  FPointHandle const Point1Handle, 
+  FFaceHandle const FaceHandle)
 {
   FEdgeHandle Edge0Handle;
-  FHalfEdge& Edge0 = New(Edge0Handle);
   FEdgeHandle Edge1Handle;
-  FHalfEdge& Edge1 = New(Edge1Handle);
+  NewEdgePair(Edge0Handle, Edge1Handle);
 
-  Edge0.AdjacentEdge = Edge1Handle;
-  Edge0.Face = FaceHandle;
-  Edge1.AdjacentEdge = Edge0Handle;
+  MakeVertex(Point0Handle, Edge0Handle);
+  MakeVertex(Point1Handle, Edge1Handle);
+
+  if (FaceHandle)
+  {
+    auto& Edge0 = Get(Edge0Handle);
+    Edge0.Face = FaceHandle;
+  }
 
   return Edge0Handle;
+}
+
+FEdgeHandle UHedgeKernel::MakeEdgePair(
+  FEdgeHandle const PreviousEdgeHandle, 
+  FPointHandle const PointHandle, 
+  FFaceHandle const FaceHandle)
+{
+  auto& PreviousEdge = Get(PreviousEdgeHandle);
+  auto const PreviousAdjacentVertexHandle = Get(PreviousEdge.AdjacentEdge).Vertex;
+  auto const PreviousPointHandle = Get(PreviousAdjacentVertexHandle).Point;
+
+  auto const NewEdgeHandle = MakeEdgePair(PreviousPointHandle, PointHandle, FaceHandle);
+  ConnectEdges(PreviousEdgeHandle, NewEdgeHandle);
+
+  return NewEdgeHandle;
 }
 
 void UHedgeKernel::SetFace(FFaceHandle FaceHandle, FEdgeHandle const RootEdgeHandle)
@@ -401,29 +446,41 @@ void UHedgeKernel::SetFace(FFaceHandle FaceHandle, FEdgeHandle const RootEdgeHan
   }
 }
 
-FVertexHandle UHedgeKernel::ConnectEdges(
-  FEdgeHandle const EdgeHandleA, 
-  FPointHandle const PointHandle, 
-  FEdgeHandle const EdgeHandleB)
+void UHedgeKernel::ConnectEdges(FEdgeHandle const A, FEdgeHandle const B)
 {
-  FHalfEdge& EdgeA = Get(EdgeHandleA);
-  FHalfEdge& EdgeB = Get(EdgeHandleB);
+  FHalfEdge& EdgeA = Get(A);
+  FHalfEdge& EdgeB = Get(B);
 
-  FVertexHandle VertexHandle;
-  FVertex& Vertex = New(VertexHandle);
+  EdgeA.NextEdge = B;
+  EdgeB.PrevEdge = A;
 
-  Vertex.Point = PointHandle;
-  Vertex.Edge = EdgeHandleB;
+  FHalfEdge& AdjacentA = Get(EdgeA.AdjacentEdge);
+  FHalfEdge& AdjacentB = Get(EdgeB.AdjacentEdge);
 
-  EdgeA.NextEdge = EdgeHandleB;
-  EdgeB.PrevEdge = EdgeHandleA;
-  EdgeB.Vertex = VertexHandle;
-
-  if (IsValidHandle(PointHandle))
+  if (!AdjacentA.Face) // The adjacent edge of A is a boundary
   {
-    FPoint& Point = Get(PointHandle);
-    Point.Vertices.Add(VertexHandle);
+    if (!AdjacentB.Face)
+    {
+      // Since these two adjacent edges have no face
+      // we can connect them to form our boundary loop
+      AdjacentA.PrevEdge = EdgeB.AdjacentEdge;
+      AdjacentB.NextEdge = EdgeA.AdjacentEdge;
+    }
+    else
+    {
+      // When our 'in' edge is a boundary, but our out edge is not
+      // we need to locate the next appropriate boundary to connect
+      auto Eh = Get(AdjacentB.PrevEdge).AdjacentEdge;
+      auto& E = Get(Eh);
+      if (!E.Face)
+      {
+        AdjacentA.PrevEdge = Eh;
+        E.NextEdge = EdgeA.AdjacentEdge;
+      }
+    }
   }
-
-  return VertexHandle;
+  else
+  {
+    // TODO: when the adjacent edge of A is not a boundary
+  }
 }
