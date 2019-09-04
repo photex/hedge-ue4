@@ -20,7 +20,7 @@ void UHedgeMesh::GetStats(FHedgeMeshStats& OutStats) const
   OutStats.NumFaces = Kernel->NumFaces();
 }
 
-FPxFace UHedgeMesh::Face(FFaceIndex const& Index) const
+FPxFace UHedgeMesh::Face(FFaceHandle const& Index) const
 {
   return FPxFace(Kernel, Index);
 }
@@ -30,28 +30,28 @@ FPxHalfEdge UHedgeMesh::Edge(FEdgeIndex const& Index) const
   return FPxHalfEdge(Kernel, Index);
 }
 
-FPxPoint UHedgeMesh::Point(FPointIndex const& Index) const
+FPxPoint UHedgeMesh::Point(FPointHandle const& Index) const
 {
   return FPxPoint(Kernel, Index);
 }
 
-FPxVertex UHedgeMesh::Vertex(FVertexIndex const& Index) const
+FPxVertex UHedgeMesh::Vertex(FVertexHandle const& Index) const
 {
   return FPxVertex(Kernel, Index);
 }
 
-TArray<FPointIndex> UHedgeMesh::AddPoints(
+TArray<FPointHandle> UHedgeMesh::AddPoints(
   TArray<FVector> const& Positions) const
 {
   auto const PositionCount = Positions.Num();
   return AddPoints(Positions.GetData(), PositionCount);
 }
 
-TArray<FPointIndex> UHedgeMesh::AddPoints(
+TArray<FPointHandle> UHedgeMesh::AddPoints(
   FVector const Positions[], 
   uint32 const PositionCount) const
 {
-  TArray<FPointIndex> OutPointIndices;
+  TArray<FPointHandle> OutPointIndices;
   OutPointIndices.Reserve(PositionCount);
   for (uint32 i = 0; i < PositionCount; ++i)
   {
@@ -61,22 +61,22 @@ TArray<FPointIndex> UHedgeMesh::AddPoints(
   return MoveTemp(OutPointIndices);
 }
 
-FFaceIndex UHedgeMesh::AddFace(TArray<FPointIndex> const& Points)
+FFaceHandle UHedgeMesh::AddFace(TArray<FPointHandle> const& Points)
 {
   if (Points.Num() < 3)
   {
     ErrorLog("Unable to add a new face to mesh without at least 3 points.");
-    return FFaceIndex::Invalid;
+    return FFaceHandle::Invalid;
   }
-  FFaceIndex FaceIndex;
+  FFaceHandle FaceIndex;
   FFace& Face = Kernel->New(FaceIndex);
   
-  FPointIndex const RootPoint = Points[0];
+  FPointHandle const RootPoint = Points[0];
   FEdgeIndex const RootEdge = Kernel->MakeEdgePair();
   auto PreviousEdge = RootEdge;
   for (auto i = 1; i < Points.Num(); ++i)
   {
-    FPointIndex const CurrentPoint = Points[i];
+    FPointHandle const CurrentPoint = Points[i];
     FEdgeIndex const CurrentEdge = Kernel->MakeEdgePair(FaceIndex);
 
     Kernel->ConnectEdges(PreviousEdge, CurrentPoint, CurrentEdge);
@@ -88,15 +88,15 @@ FFaceIndex UHedgeMesh::AddFace(TArray<FPointIndex> const& Points)
   return FaceIndex;
 }
 
-FFaceIndex UHedgeMesh::AddFace(
-  FEdgeIndex const& RootEdge, TArray<FPointIndex> const& Points)
+FFaceHandle UHedgeMesh::AddFace(
+  FEdgeIndex const& RootEdge, TArray<FPointHandle> const& Points)
 {
   if (Points.Num() < 1)
   {
     ErrorLog("Unable to add a new face to mesh without at least 1 point.");
-    return FFaceIndex::Invalid;
+    return FFaceHandle::Invalid;
   }
-  FFaceIndex FaceIndex;
+  FFaceHandle FaceIndex;
   FFace& Face = Kernel->New(FaceIndex);
 
   auto const RootPoint = Edge(RootEdge).Adjacent().Vertex().Point().GetIndex();
@@ -121,10 +121,10 @@ FFaceIndex UHedgeMesh::AddFace(
   return FaceIndex;
 }
 
-FFaceIndex UHedgeMesh::AddFace(
-  FEdgeIndex const& E0, FPointIndex const& P1)
+FFaceHandle UHedgeMesh::AddFace(
+  FEdgeIndex const& E0, FPointHandle const& P1)
 {
-  FFaceIndex FaceIndex;
+  FFaceHandle FaceIndex;
   FFace& Face = Kernel->New(FaceIndex);
   Face.RootEdgeIndex = E0;
 
@@ -144,14 +144,14 @@ FFaceIndex UHedgeMesh::AddFace(
   return FaceIndex;
 }
 
-FFaceIndex UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
+FFaceHandle UHedgeMesh::AddFace(TArray<FEdgeIndex> const& Edges)
 {
   if (Edges.Num() < 3)
   {
     ErrorLog("Unable to create a face without at least 3 edges.");
-    return FFaceIndex::Invalid;
+    return FFaceHandle::Invalid;
   }
-  FFaceIndex FaceIndex;
+  FFaceHandle FaceIndex;
   FFace& Face = Kernel->New(FaceIndex);
 
   auto const RootEdge = Edges[0];
@@ -176,17 +176,17 @@ void UHedgeMesh::Dissolve(FEdgeIndex Index)
   unimplemented();
 }
 
-void UHedgeMesh::Dissolve(FFaceIndex Index)
+void UHedgeMesh::Dissolve(FFaceHandle Index)
 {
   unimplemented();
 }
 
-void UHedgeMesh::Dissolve(FVertexIndex Index)
+void UHedgeMesh::Dissolve(FVertexHandle Index)
 {
   unimplemented();
 }
 
-void UHedgeMesh::Dissolve(FPointIndex Index)
+void UHedgeMesh::Dissolve(FPointHandle Index)
 {
   unimplemented();
 }

@@ -83,7 +83,7 @@ struct FPxHalfEdge : FPxElement<FEdgeIndex, FHalfEdge>
 /**
  * TODO: docs
  */
-struct FPxFace : FPxElement<FFaceIndex, FFace>
+struct FPxFace : FPxElement<FFaceHandle, FFace>
 {
   using FPxElement::FPxElement;
 
@@ -93,7 +93,7 @@ struct FPxFace : FPxElement<FFaceIndex, FFace>
 /**
  * TODO: docs
  */
-struct FPxVertex : FPxElement<FVertexIndex, FVertex>
+struct FPxVertex : FPxElement<FVertexHandle, FVertex>
 {
   using FPxElement::FPxElement;
 
@@ -104,7 +104,7 @@ struct FPxVertex : FPxElement<FVertexIndex, FVertex>
 /**
  * TODO: docs
  */
-struct FPxPoint : FPxElement<FPointIndex, FPoint>
+struct FPxPoint : FPxElement<FPointHandle, FPoint>
 {
   using FPxElement::FPxElement;
 

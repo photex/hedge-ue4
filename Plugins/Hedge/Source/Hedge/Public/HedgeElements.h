@@ -21,10 +21,10 @@ struct FMeshElement
 struct FHalfEdge : FMeshElement
 {
   /// The vertex this edge starts from
-  FVertexIndex VertexIndex = FVertexIndex::Invalid;
+  FVertexHandle VertexIndex = FVertexHandle::Invalid;
   /// Either the face that this edge contributes to
   /// or 'Invalid' for boundary edges.
-  FFaceIndex FaceIndex = FFaceIndex::Invalid;
+  FFaceHandle FaceIndex = FFaceHandle::Invalid;
   /// The next edge in the loop that forms a face.
   FEdgeIndex NextEdgeIndex = FEdgeIndex::Invalid;
   /// The previous edge in the loop that forms a face.
@@ -54,9 +54,9 @@ struct FFace : FMeshElement
  */
 struct FFaceTriangle
 {
-  FVertexIndex VertexIndex0 = FVertexIndex::Invalid;
-  FVertexIndex VertexIndex1 = FVertexIndex::Invalid;
-  FVertexIndex VertexIndex2 = FVertexIndex::Invalid;
+  FVertexHandle VertexIndex0 = FVertexHandle::Invalid;
+  FVertexHandle VertexIndex1 = FVertexHandle::Invalid;
+  FVertexHandle VertexIndex2 = FVertexHandle::Invalid;
 };
 
 /**
@@ -68,7 +68,7 @@ struct FFaceTriangle
 struct FVertex : FMeshElement
 {
   /// The point which holds any relevant attributes.
-  FPointIndex PointIndex = FPointIndex::Invalid;
+  FPointHandle PointIndex = FPointHandle::Invalid;
   /// The edge eminating from this vertex.
   FEdgeIndex EdgeIndex = FEdgeIndex::Invalid;
 };

@@ -10,10 +10,10 @@
 template<typename ElementIndexType>
 using TRemapTable = TMap<ElementIndexType, ElementIndexType>;
 
-using FPointRemapTable = TRemapTable<FPointIndex>;
-using FVertexRemapTable = TRemapTable<FVertexIndex>;
+using FPointRemapTable = TRemapTable<FPointHandle>;
+using FVertexRemapTable = TRemapTable<FVertexHandle>;
 using FEdgeRemapTable = TRemapTable<FEdgeIndex>;
-using FFaceRemapTable = TRemapTable<FFaceIndex>;
+using FFaceRemapTable = TRemapTable<FFaceHandle>;
 
 struct FRemapData
 {
@@ -143,9 +143,9 @@ class UHedgeKernel final : public UObject
   GENERATED_BODY()
 
   THedgeElementBuffer<FHalfEdge, FEdgeIndex> Edges;
-  THedgeElementBuffer<FVertex, FVertexIndex> Vertices;
-  THedgeElementBuffer<FFace, FFaceIndex> Faces;
-  THedgeElementBuffer<FPoint, FPointIndex> Points;
+  THedgeElementBuffer<FVertex, FVertexHandle> Vertices;
+  THedgeElementBuffer<FFace, FFaceHandle> Faces;
+  THedgeElementBuffer<FPoint, FPointHandle> Points;
 
   void RemapPoints(FPointRemapTable const& Table);
   void RemapEdges(FEdgeRemapTable const& Table);
@@ -155,30 +155,30 @@ class UHedgeKernel final : public UObject
 public:
 
   bool IsValidIndex(FEdgeIndex Index) const;
-  bool IsValidIndex(FFaceIndex Index) const;
-  bool IsValidIndex(FVertexIndex Index) const;
-  bool IsValidIndex(FPointIndex Index) const;
+  bool IsValidIndex(FFaceHandle Index) const;
+  bool IsValidIndex(FVertexHandle Index) const;
+  bool IsValidIndex(FPointHandle Index) const;
 
   FHalfEdge& Get(FEdgeIndex Index);
-  FFace& Get(FFaceIndex Index);
-  FVertex& Get(FVertexIndex Index);
-  FPoint& Get(FPointIndex Index);
+  FFace& Get(FFaceHandle Index);
+  FVertex& Get(FVertexHandle Index);
+  FPoint& Get(FPointHandle Index);
 
   FHalfEdge& New(FEdgeIndex& OutIndex);
-  FFace& New(FFaceIndex& OutIndex);
-  FVertex& New(FVertexIndex& OutIndex);
-  FPoint& New(FPointIndex& OutIndex);
-  FPoint& New(FPointIndex& OutIndex, FVector Position);
+  FFace& New(FFaceHandle& OutIndex);
+  FVertex& New(FVertexHandle& OutIndex);
+  FPoint& New(FPointHandle& OutIndex);
+  FPoint& New(FPointHandle& OutIndex, FVector Position);
 
   FEdgeIndex Add(FHalfEdge&& Edge);
-  FFaceIndex Add(FFace&& Face);
-  FVertexIndex Add(FVertex&& Vertex);
-  FPointIndex Add(FPoint&& Point);
+  FFaceHandle Add(FFace&& Face);
+  FVertexHandle Add(FVertex&& Vertex);
+  FPointHandle Add(FPoint&& Point);
 
   void Remove(FEdgeIndex Index);
-  void Remove(FFaceIndex Index);
-  void Remove(FVertexIndex Index);
-  void Remove(FPointIndex Index);
+  void Remove(FFaceHandle Index);
+  void Remove(FVertexHandle Index);
+  void Remove(FPointHandle Index);
 
   uint32 NumPoints() const;
   uint32 NumVertices() const;
@@ -202,7 +202,7 @@ public:
    * the first edge with the specified face.
    * @returns The index of the first edge.
    */
-  FEdgeIndex MakeEdgePair(FFaceIndex FaceIndex);
+  FEdgeIndex MakeEdgePair(FFaceHandle FaceIndex);
 
   /**
    * Assigns all the connected edges to the specified face and assigns
@@ -211,7 +211,7 @@ public:
    * @param FaceIndex: The face to assign and update.
    * @param RootEdgeIndex: The first edge of a loop which forms the face
    */
-  void SetFace(FFaceIndex FaceIndex, FEdgeIndex RootEdgeIndex);
+  void SetFace(FFaceHandle FaceIndex, FEdgeIndex RootEdgeIndex);
 
   /**
    * Connect the two edges specified with a new vertex associated with
@@ -224,6 +224,6 @@ public:
    * @param EdgeIndexB: Edge originating at the new vertex pointing to EdgeIndexA as 'previous'
    * @returns The index to the newly created vertex.
    */
-  FVertexIndex ConnectEdges(
-    FEdgeIndex EdgeIndexA, FPointIndex PointIndex, FEdgeIndex EdgeIndexB);
+  FVertexHandle ConnectEdges(
+    FEdgeIndex EdgeIndexA, FPointHandle PointIndex, FEdgeIndex EdgeIndexB);
 };

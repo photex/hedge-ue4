@@ -65,7 +65,7 @@ void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
 {
   for (auto& Point : Points.Elements)
   {
-    TSet<FVertexIndex> NewVertexSet;
+    TSet<FVertexHandle> NewVertexSet;
     for (auto const& VertexIndex : Point.Vertices)
     {
       NewVertexSet.Add(Table[VertexIndex]);
@@ -97,17 +97,17 @@ bool UHedgeKernel::IsValidIndex(FEdgeIndex const Index) const
   return Edges.IsValidIndex(Index);
 }
 
-bool UHedgeKernel::IsValidIndex(FFaceIndex const Index) const
+bool UHedgeKernel::IsValidIndex(FFaceHandle const Index) const
 {
   return Faces.IsValidIndex(Index);
 }
 
-bool UHedgeKernel::IsValidIndex(FVertexIndex const Index) const
+bool UHedgeKernel::IsValidIndex(FVertexHandle const Index) const
 {
   return Vertices.IsValidIndex(Index);
 }
 
-bool UHedgeKernel::IsValidIndex(FPointIndex const Index) const
+bool UHedgeKernel::IsValidIndex(FPointHandle const Index) const
 {
   return Points.IsValidIndex(Index);
 }
@@ -117,17 +117,17 @@ FHalfEdge& UHedgeKernel::Get(FEdgeIndex const Index)
   return Edges.Get(Index);
 }
 
-FFace& UHedgeKernel::Get(FFaceIndex const Index)
+FFace& UHedgeKernel::Get(FFaceHandle const Index)
 {
   return Faces.Get(Index);
 }
 
-FVertex& UHedgeKernel::Get(FVertexIndex const Index)
+FVertex& UHedgeKernel::Get(FVertexHandle const Index)
 {
   return Vertices.Get(Index);
 }
 
-FPoint& UHedgeKernel::Get(FPointIndex const Index)
+FPoint& UHedgeKernel::Get(FPointHandle const Index)
 {
   return Points.Get(Index);
 }
@@ -138,25 +138,25 @@ FHalfEdge& UHedgeKernel::New(FEdgeIndex& OutIndex)
   return Get(OutIndex);
 }
 
-FFace& UHedgeKernel::New(FFaceIndex& OutIndex)
+FFace& UHedgeKernel::New(FFaceHandle& OutIndex)
 {
   OutIndex = Faces.New();
   return Get(OutIndex);
 }
 
-FVertex& UHedgeKernel::New(FVertexIndex& OutIndex)
+FVertex& UHedgeKernel::New(FVertexHandle& OutIndex)
 {
   OutIndex = Vertices.New();
   return Get(OutIndex);
 }
 
-FPoint& UHedgeKernel::New(FPointIndex& OutIndex)
+FPoint& UHedgeKernel::New(FPointHandle& OutIndex)
 {
   OutIndex = Points.New();
   return Get(OutIndex);
 }
 
-FPoint& UHedgeKernel::New(FPointIndex& OutIndex, FVector Position)
+FPoint& UHedgeKernel::New(FPointHandle& OutIndex, FVector Position)
 {
   OutIndex = Points.New(Position);
   return Get(OutIndex);
@@ -167,17 +167,17 @@ FEdgeIndex UHedgeKernel::Add(FHalfEdge&& Edge)
   return Edges.Add(MoveTemp(Edge));
 }
 
-FFaceIndex UHedgeKernel::Add(FFace&& Face)
+FFaceHandle UHedgeKernel::Add(FFace&& Face)
 {
   return Faces.Add(MoveTemp(Face));
 }
 
-FVertexIndex UHedgeKernel::Add(FVertex&& Vertex)
+FVertexHandle UHedgeKernel::Add(FVertex&& Vertex)
 {
   return Vertices.Add(MoveTemp(Vertex));
 }
 
-FPointIndex UHedgeKernel::Add(FPoint&& Point)
+FPointHandle UHedgeKernel::Add(FPoint&& Point)
 {
   return Points.Add(MoveTemp(Point));
 }
@@ -264,7 +264,7 @@ void UHedgeKernel::Remove(FEdgeIndex const Index)
   Edges.Remove(Index);
 }
 
-void UHedgeKernel::Remove(FFaceIndex const Index)
+void UHedgeKernel::Remove(FFaceHandle const Index)
 {
   if (!IsValidIndex(Index))
   {
@@ -277,7 +277,7 @@ void UHedgeKernel::Remove(FFaceIndex const Index)
     while(IsValidIndex(EIndex))
     {
       auto& Edge = Get(EIndex);
-      Edge.FaceIndex = FFaceIndex::Invalid;
+      Edge.FaceIndex = FFaceHandle::Invalid;
       EIndex = Edge.NextEdgeIndex;
     }
   }
@@ -285,7 +285,7 @@ void UHedgeKernel::Remove(FFaceIndex const Index)
   Faces.Remove(Index);
 }
 
-void UHedgeKernel::Remove(FVertexIndex const Index)
+void UHedgeKernel::Remove(FVertexHandle const Index)
 {
   if (!IsValidIndex(Index))
   {
@@ -303,14 +303,14 @@ void UHedgeKernel::Remove(FVertexIndex const Index)
     if (IsValidIndex(Vertex.EdgeIndex))
     {
       auto& Edge = Get(Vertex.EdgeIndex);
-      Edge.VertexIndex = FVertexIndex::Invalid;
+      Edge.VertexIndex = FVertexHandle::Invalid;
     }
   }
 
   Vertices.Remove(Index);
 }
 
-void UHedgeKernel::Remove(FPointIndex const Index)
+void UHedgeKernel::Remove(FPointHandle const Index)
 {
   if (!IsValidIndex(Index))
   {
@@ -326,7 +326,7 @@ void UHedgeKernel::Remove(FPointIndex const Index)
         continue;
       }
       auto& Vertex = Vertices.Get(VertexIndex);
-      Vertex.PointIndex = FPointIndex::Invalid;
+      Vertex.PointIndex = FPointHandle::Invalid;
     }
   }
   Points.Remove(Index);
@@ -379,7 +379,7 @@ FEdgeIndex UHedgeKernel::MakeEdgePair()
   return EdgeIndex0;
 }
 
-FEdgeIndex UHedgeKernel::MakeEdgePair(FFaceIndex FaceIndex)
+FEdgeIndex UHedgeKernel::MakeEdgePair(FFaceHandle FaceIndex)
 {
   FEdgeIndex EdgeIndex0;
   FHalfEdge& Edge0 = New(EdgeIndex0);
@@ -393,7 +393,7 @@ FEdgeIndex UHedgeKernel::MakeEdgePair(FFaceIndex FaceIndex)
   return EdgeIndex0;
 }
 
-void UHedgeKernel::SetFace(FFaceIndex FaceIndex, FEdgeIndex const RootEdgeIndex)
+void UHedgeKernel::SetFace(FFaceHandle FaceIndex, FEdgeIndex const RootEdgeIndex)
 {
   auto& Face = New(FaceIndex);
   Face.RootEdgeIndex = RootEdgeIndex;
@@ -414,15 +414,15 @@ void UHedgeKernel::SetFace(FFaceIndex FaceIndex, FEdgeIndex const RootEdgeIndex)
   }
 }
 
-FVertexIndex UHedgeKernel::ConnectEdges(
+FVertexHandle UHedgeKernel::ConnectEdges(
   FEdgeIndex const EdgeIndexA, 
-  FPointIndex const PointIndex, 
+  FPointHandle const PointIndex, 
   FEdgeIndex const EdgeIndexB)
 {
   FHalfEdge& EdgeA = Get(EdgeIndexA);
   FHalfEdge& EdgeB = Get(EdgeIndexB);
 
-  FVertexIndex VertexIndex;
+  FVertexHandle VertexIndex;
   FVertex& Vertex = New(VertexIndex);
 
   Vertex.PointIndex = PointIndex;

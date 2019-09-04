@@ -72,12 +72,12 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
 {
   auto* Kernel = NewObject<UHedgeKernel>();
 
-  FPointIndex PIndex0, PIndex1, PIndex2;
+  FPointHandle PIndex0, PIndex1, PIndex2;
   auto& P0 = Kernel->New(PIndex0, FVector(0.f, 0.f, 0.f));
   auto& P1 = Kernel->New(PIndex1, FVector(1.f, 0.f, 0.f));
   auto& P2 = Kernel->New(PIndex2, FVector(0.f, 1.f, 0.f));
 
-  FFaceIndex FIndex0;
+  FFaceHandle FIndex0;
   auto& Face = Kernel->New(FIndex0);
 
   auto const EIndex0 = Kernel->MakeEdgePair(FIndex0);
@@ -103,8 +103,8 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
     FEdgeIndex const Eindex,
     FEdgeIndex const Prev,
     FEdgeIndex const Next,
-    FVertexIndex const Vindex,
-    FFaceIndex const Findex)
+    FVertexHandle const Vindex,
+    FFaceHandle const Findex)
   {
     auto& Edge = Kernel->Get(Eindex);
     TestTrue(TEXT("Edge points to invalid next edge."), Kernel->IsValidIndex(Next));
@@ -130,9 +130,9 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
 {
   auto* Kernel = NewObject<UHedgeKernel>();
 
-  FPointIndex PIndex0, PIndex1, PIndex2;
+  FPointHandle PIndex0, PIndex1, PIndex2;
   {
-    FPointIndex PIndex[5];
+    FPointHandle PIndex[5];
     FPoint Points[5] = {
       Kernel->New(PIndex[0], FVector(-0.5f, 0.f, 0.f)),
       Kernel->New(PIndex[1], FVector(0.f, 1.f, 0.f)),
@@ -150,9 +150,9 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   TestEqual(TEXT("PIndex1 != 2."), PIndex1.GetOffset(), 2);
   TestEqual(TEXT("PIndex2 != 4."), PIndex2.GetOffset(), 4);
 
-  FFaceIndex FIndex0;
+  FFaceHandle FIndex0;
   {
-    FFaceIndex FIndex[3];
+    FFaceHandle FIndex[3];
     FFace Faces[3] = {
       Kernel->New(FIndex[0]),
       Kernel->New(FIndex[1]),
@@ -212,9 +212,9 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
 
   // For the indexes that we expect to still point to data in the  kernel
   // we can just create a new version without the generation value.
-  PIndex0 = FPointIndex(PIndex0.GetOffset());
-  PIndex1 = FPointIndex(1);
-  PIndex2 = FPointIndex(2);
+  PIndex0 = FPointHandle(PIndex0.GetOffset());
+  PIndex1 = FPointHandle(1);
+  PIndex2 = FPointHandle(2);
   TestTrue(TEXT("Updated PIndex0 is valid."), Kernel->IsValidIndex(PIndex0));
   TestTrue(TEXT("Updated PIndex1 is valid."), Kernel->IsValidIndex(PIndex1));
   TestTrue(TEXT("Updated PIndex2 is valid."), Kernel->IsValidIndex(PIndex2));
