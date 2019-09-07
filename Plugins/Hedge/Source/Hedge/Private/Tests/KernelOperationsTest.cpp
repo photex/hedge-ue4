@@ -83,13 +83,13 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
   FFaceHandle FIndex0;
   auto& Face = Kernel->New(FIndex0);
 
-  auto const EIndex0 = Kernel->MakeEdgePair(,, FIndex0);
-  auto const EIndex1 = Kernel->MakeEdgePair(,, FIndex0);
-  auto const EIndex2 = Kernel->MakeEdgePair(,, FIndex0);
+  auto const EIndex0 = Kernel->MakeEdgePair(PIndex0, PIndex1, FIndex0);
+  auto const EIndex1 = Kernel->MakeEdgePair(EIndex0, PIndex2, FIndex0);
+  auto const EIndex2 = Kernel->MakeEdgePair(EIndex1, EIndex0, FIndex0);
 
-  auto const VIndex0 = Kernel->ConnectEdges(EIndex0, PIndex1, EIndex1);
-  auto const VIndex1 = Kernel->ConnectEdges(EIndex1, PIndex2, EIndex2);
-  auto const VIndex2 = Kernel->ConnectEdges(EIndex2, PIndex0, EIndex0);
+  auto const VIndex0 = Kernel->Get(EIndex0).Vertex;
+  auto const VIndex1 = Kernel->Get(EIndex1).Vertex;
+  auto const VIndex2 = Kernel->Get(EIndex2).Vertex;
 
   Face.RootEdge = EIndex0;
 
@@ -98,33 +98,27 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
   TestEqual(TEXT("Unexpected number of vertices"), Kernel->NumVertices(), 3);
   TestEqual(TEXT("Unexpected number of faces"), Kernel->NumFaces(), 1);
 
-  TestTrue(TEXT("P0 was missing vertex2 index"), P0.Vertices.Contains(VIndex2));
-  TestTrue(TEXT("P1 was missing vertex0 index"), P1.Vertices.Contains(VIndex0));
-  TestTrue(TEXT("P2 was missing vertex1 index"), P2.Vertices.Contains(VIndex1));
+  TestTrue(TEXT("P0 was missing vertex0 index"), P0.Vertices.Contains(VIndex0));
+  TestTrue(TEXT("P1 was missing vertex1 index"), P1.Vertices.Contains(VIndex1));
+  TestTrue(TEXT("P2 was missing vertex2 index"), P2.Vertices.Contains(VIndex2));
 
   auto const ValidateEdge = [&Kernel, this](
-    FEdgeHandle const Eindex,
-    FEdgeHandle const Prev,
-    FEdgeHandle const Next,
-    FVertexHandle const Vindex,
-    FFaceHandle const Findex)
+    FEdgeHandle const TestEdgeHandle,
+    FEdgeHandle const ExpectedPrev,
+    FEdgeHandle const ExpectedNext,
+    FVertexHandle const ExpectedVertex,
+    FFaceHandle const ExpectedFace)
   {
-    auto& Edge = Kernel->Get(Eindex);
-    TestTrue(TEXT("Edge points to invalid next edge."), Kernel->IsValidHandle(Next));
-    TestTrue(TEXT("Edge points to invalid prev edge."), Kernel->IsValidHandle(Prev));
-    TestEqual(
-      TEXT("Edge face index did not match specified face."), Edge.Face, Findex);
-    TestEqual(
-      TEXT("Edge prev index did not match specified edge."), Edge.PrevEdge, Prev);
-    TestEqual(
-      TEXT("Edge next index did not match specified edge."), Edge.NextEdge, Next);
-    TestEqual(
-      TEXT("Edge vertex index did not match specified edge."), Edge.Vertex, Vindex);
+    auto& Edge = Kernel->Get(TestEdgeHandle);
+    TestEqual(TEXT("Edge face is set as expected."), Edge.Face, ExpectedFace);
+    TestEqual(TEXT("Edge prev handle is set as expected."), Edge.PrevEdge, ExpectedPrev);
+    TestEqual(TEXT("Edge next is set as expected."), Edge.NextEdge, ExpectedNext);
+    TestEqual(TEXT("Edge vertex is set as expected."), Edge.Vertex, ExpectedVertex);
   };
 
-  ValidateEdge(EIndex0, EIndex2, EIndex1, VIndex2, FIndex0);
-  ValidateEdge(EIndex1, EIndex0, EIndex2, VIndex0, FIndex0);
-  ValidateEdge(EIndex2, EIndex1, EIndex0, VIndex1, FIndex0);
+  ValidateEdge(EIndex0, EIndex2, EIndex1, VIndex0, FIndex0);
+  ValidateEdge(EIndex1, EIndex0, EIndex2, VIndex1, FIndex0);
+  ValidateEdge(EIndex2, EIndex1, EIndex0, VIndex2, FIndex0);
 
   return true;
 }
@@ -181,11 +175,11 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   FEdgeHandle EIndex0, EIndex1, EIndex2;
   {
     FEdgeHandle EIndex[5] = {
-      Kernel->MakeEdgePair(,, FIndex0),
-      Kernel->MakeEdgePair(,, FIndex0),
-      Kernel->MakeEdgePair(,, FIndex0),
-      Kernel->MakeEdgePair(,, FIndex0),
-      Kernel->MakeEdgePair(,, FIndex0),
+      Kernel->MakeEdgePair(FIndex0),
+      Kernel->MakeEdgePair(FIndex0),
+      Kernel->MakeEdgePair(FIndex0),
+      Kernel->MakeEdgePair(FIndex0),
+      Kernel->MakeEdgePair(FIndex0),
     };
     EIndex0 = EIndex[0];
     EIndex1 = EIndex[3];
@@ -199,9 +193,17 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
 
   Kernel->Get(FIndex0).RootEdge = EIndex0;
 
-  Kernel->ConnectEdges(EIndex0, PIndex1, EIndex1);
-  Kernel->ConnectEdges(EIndex1, PIndex2, EIndex2);
-  Kernel->ConnectEdges(EIndex2, PIndex0, EIndex0);
+  Kernel->ConnectEdges(EIndex0, EIndex1);
+  Kernel->ConnectEdges(EIndex1, EIndex2);
+  Kernel->ConnectEdges(EIndex2, EIndex0);
+
+  auto const VIndex0 = Kernel->Get(EIndex0).Vertex;
+  auto const VIndex1 = Kernel->Get(EIndex1).Vertex;
+  auto const VIndex2 = Kernel->Get(EIndex2).Vertex;
+
+  Kernel->SetVertexPoint(VIndex0, PIndex0);
+  Kernel->SetVertexPoint(VIndex1, PIndex1);
+  Kernel->SetVertexPoint(VIndex2, PIndex2);
 
   TestEqual(TEXT("NumPoints == 3"), Kernel->NumPoints(), 3);
   TestEqual(TEXT("NumEdges == 3"), Kernel->NumEdges(), 6);

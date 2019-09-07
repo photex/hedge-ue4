@@ -1,4 +1,7 @@
 /CMakeLists.txt
+/.idea
+# why clion, why.
+/cmake-build-*
 /Content/
 /Source/
 /Config/

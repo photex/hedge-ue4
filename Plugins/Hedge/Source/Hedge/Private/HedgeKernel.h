@@ -7,6 +7,7 @@
 #include "HedgeElements.h"
 #include "HedgeKernel.generated.h"
 
+
 template<typename ElementIndexType>
 using TRemapTable = TMap<ElementIndexType, ElementIndexType>;
 
@@ -197,7 +198,7 @@ public:
    * @todo: documentssss
    */
   FVertexHandle MakeVertex(
-    FPointHandle PointHandle, 
+    FPointHandle PointHandle = FPointHandle::Invalid,
     FEdgeHandle EdgeHandle = FEdgeHandle::Invalid);
 
   /**
@@ -211,12 +212,31 @@ public:
     FFaceHandle FaceHandle = FFaceHandle::Invalid);
 
   /**
-   * @todo: docs pls oh goawed docs
+   * Create a new edge pair extending from the specified edge to the
+   * specified point.
+   *
+   * @returns The index of the first edge.
    */
   FEdgeHandle MakeEdgePair(
     FEdgeHandle PreviousEdgeHandle, 
     FPointHandle PointHandle, 
     FFaceHandle FaceHandle = FFaceHandle::Invalid);
+
+  /**
+   * Create a new edge pair connecting to the two specified edges.
+   * This effectively "closes" the perimeter edge loop around a face.
+   *
+   * @returns The index of the first edge.
+   */
+  FEdgeHandle MakeEdgePair(
+    FEdgeHandle PreviousEdgeHandle,
+    FEdgeHandle NextEdgeHandle,
+    FFaceHandle FaceHandle = FFaceHandle::Invalid);
+
+  /**
+   * This creates a pair of half edges without any point associations.
+   */
+  FEdgeHandle MakeEdgePair(FFaceHandle FaceHandle = FFaceHandle::Invalid);
 
   /**
    * Assigns all the connected edges to the specified face and assigns
@@ -236,4 +256,8 @@ public:
    * @param B: HalfEdge which should point to A as 'previous'
    */
   void ConnectEdges(FEdgeHandle A, FEdgeHandle B);
+
+  void SetVertexPoint(FVertexHandle VertexHandle, FPointHandle PointHandle);
+  void SetVertexEdge(FVertexHandle VertexHandle, FEdgeHandle EdgeHandle);
 };
+

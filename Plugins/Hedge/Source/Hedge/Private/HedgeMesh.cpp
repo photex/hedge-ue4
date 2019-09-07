@@ -72,18 +72,17 @@ FFaceHandle UHedgeMesh::AddFace(TArray<FPointHandle> const& Points)
   FFace& Face = Kernel->New(FaceHandle);
   
   FPointHandle const RootPoint = Points[0];
-  FEdgeHandle const RootEdge = Kernel->MakeEdgePair();
+  FPointHandle CurrentPoint = Points[1];
+  FEdgeHandle const RootEdge = Kernel->MakeEdgePair(RootPoint, CurrentPoint, FaceHandle);
   auto PreviousEdge = RootEdge;
-  for (auto i = 1; i < Points.Num(); ++i)
+  for (auto i = 2; i < Points.Num(); ++i)
   {
-    FPointHandle const CurrentPoint = Points[i];
-    FEdgeHandle const CurrentEdge = Kernel->MakeEdgePair(FaceHandle);
-
-    Kernel->ConnectEdges(PreviousEdge, CurrentPoint, CurrentEdge);
+    CurrentPoint = Points[i];
+    FEdgeHandle const CurrentEdge = Kernel->MakeEdgePair(PreviousEdge, CurrentPoint, FaceHandle);
 
     PreviousEdge = CurrentEdge;
   }
-  Kernel->ConnectEdges(PreviousEdge, RootPoint, RootEdge);
+  Kernel->MakeEdgePair(PreviousEdge, RootPoint, FaceHandle);
   Face.RootEdge = RootEdge;
   return FaceHandle;
 }
@@ -99,47 +98,30 @@ FFaceHandle UHedgeMesh::AddFace(
   FFaceHandle FaceHandle;
   FFace& Face = Kernel->New(FaceHandle);
 
-  auto const RootPoint = Edge(RootEdge).Adjacent().Vertex().Point().GetHandle();
-  auto CurrentEdge = RootEdge;
-  auto CurrentPoint = RootPoint;
   auto PreviousEdge = RootEdge;
-  auto PreviousPoint = RootPoint;
   for (auto i = 0; i < Points.Num(); ++i)
   {
-    CurrentPoint = Points[i];
-    CurrentEdge = Kernel->MakeEdgePair(FaceHandle);
-    Kernel->ConnectEdges(PreviousEdge, PreviousPoint, CurrentEdge);
-
-    PreviousEdge = CurrentEdge;
-    PreviousPoint = CurrentPoint;
+    auto const CurrentPoint = Points[i];
+    PreviousEdge = Kernel->MakeEdgePair(PreviousEdge, CurrentPoint, FaceHandle);
   }
-  CurrentPoint = Edge(RootEdge).Adjacent().Next().Vertex().Point().GetHandle();
-  CurrentEdge = Kernel->MakeEdgePair(FaceHandle);
-  Kernel->ConnectEdges(PreviousEdge, PreviousPoint, CurrentEdge);
-  Kernel->ConnectEdges(CurrentEdge, CurrentPoint, RootEdge);
+  Kernel->MakeEdgePair(PreviousEdge, RootEdge, FaceHandle);
   Face.RootEdge = RootEdge;
   return FaceHandle;
 }
 
 FFaceHandle UHedgeMesh::AddFace(
-  FEdgeHandle const& E0, FPointHandle const& P1)
+  FEdgeHandle const& RootEdgeHandle, 
+  FPointHandle const& P1)
 {
   FFaceHandle FaceHandle;
   FFace& Face = Kernel->New(FaceHandle);
-  Face.RootEdge = E0;
+  Face.RootEdge = RootEdgeHandle;
 
-  auto& Edge0 = Kernel->Get(E0);
+  auto& Edge0 = Kernel->Get(RootEdgeHandle);
   Edge0.Face = FaceHandle;
 
-  auto const P0 = Edge(E0).Adjacent().Vertex().Point().GetHandle();
-  auto const P2 = Edge(E0).Adjacent().Next().Vertex().Point().GetHandle();
-
-  auto const E1 = Kernel->MakeEdgePair(FaceHandle);
-  auto const E2 = Kernel->MakeEdgePair(FaceHandle);
-
-  Kernel->ConnectEdges(E0, P0, E1);
-  Kernel->ConnectEdges(E1, P1, E2);
-  Kernel->ConnectEdges(E2, P2, E0);
+  auto const Edge1 = Kernel->MakeEdgePair(RootEdgeHandle, P1, FaceHandle);
+  Kernel->MakeEdgePair(Edge1, RootEdgeHandle, FaceHandle);
 
   return FaceHandle;
 }
@@ -152,21 +134,18 @@ FFaceHandle UHedgeMesh::AddFace(TArray<FEdgeHandle> const& Edges)
     return FFaceHandle::Invalid;
   }
   FFaceHandle FaceHandle;
-  FFace& Face = Kernel->New(FaceHandle);
+  Kernel->New(FaceHandle);
 
   auto const RootEdge = Edges[0];
-  auto LastEdge = RootEdge;
-  auto CurrentEdge = LastEdge;
+  auto PreviousEdge = RootEdge;
   for (auto i = 1; i < Edges.Num(); ++i)
   {
-    CurrentEdge = Edges[i];
-    auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetHandle();
-    Kernel->ConnectEdges(LastEdge, Point, CurrentEdge);
+    auto const CurrentEdge = Edges[i];
+    Kernel->ConnectEdges(PreviousEdge, CurrentEdge);
     Kernel->Get(CurrentEdge).Face = FaceHandle;
-    LastEdge = CurrentEdge;
+    PreviousEdge = CurrentEdge;
   }
-  auto const Point = Edge(LastEdge).Adjacent().Vertex().Point().GetHandle();
-  Kernel->ConnectEdges(LastEdge, Point, RootEdge);
+  Kernel->ConnectEdges(PreviousEdge, RootEdge);
   
   return FaceHandle;
 }
