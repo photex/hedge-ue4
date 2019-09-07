@@ -11,7 +11,7 @@ void UHedgeKernel::RemapPoints(FPointRemapTable const& Table)
   {
     if (Vertex.Point)
     {
-      Vertex.Point = Table[Vertex.Point];
+      Vertex.Point = Table[Vertex.Point.GetIndex()];
     }
   }
 }
@@ -22,31 +22,33 @@ void UHedgeKernel::RemapEdges(FEdgeRemapTable const& Table)
   {
     if (Vertex.Edge)
     {
-      Vertex.Edge = Table[Vertex.Edge];
+      Vertex.Edge = Table[Vertex.Edge.GetIndex()];
     }
   }
+
   for (auto& Edge : Edges.Elements)
   {
     if (Edge.NextEdge)
     {
-      Edge.NextEdge = Table[Edge.NextEdge];
+      Edge.NextEdge = Table[Edge.NextEdge.GetIndex()];
     }
 
     if (Edge.PrevEdge)
     {
-      Edge.PrevEdge = Table[Edge.PrevEdge];
+      Edge.PrevEdge = Table[Edge.PrevEdge.GetIndex()];
     }
 
     if (Edge.AdjacentEdge)
     {
-      Edge.AdjacentEdge = Table[Edge.AdjacentEdge];
+      Edge.AdjacentEdge = Table[Edge.AdjacentEdge.GetIndex()];
     }
   }
+
   for (auto& Face : Faces.Elements)
   {
     if (Face.RootEdge)
     {
-      Face.RootEdge = Table[Face.RootEdge];
+      Face.RootEdge = Table[Face.RootEdge.GetIndex()];
     }
   }
 }
@@ -57,7 +59,7 @@ void UHedgeKernel::RemapFaces(FFaceRemapTable const& Table)
   {
     if (Edge.Face)
     {
-      Edge.Face = Table[Edge.Face];
+      Edge.Face = Table[Edge.Face.GetIndex()];
     }
   }
 }
@@ -69,7 +71,7 @@ void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
     TSet<FVertexHandle> NewVertexSet;
     for (auto const& VertexHandle : Point.Vertices)
     {
-      NewVertexSet.Add(Table[VertexHandle]);
+      NewVertexSet.Add(Table[VertexHandle.GetIndex()]);
     }
     Point.Vertices = MoveTemp(NewVertexSet);
   }
@@ -78,7 +80,7 @@ void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
   {
     if (Edge.Vertex)
     {
-      Edge.Vertex = Table[Edge.Vertex];
+      Edge.Vertex = Table[Edge.Vertex.GetIndex()];
     }
   }
 
@@ -86,9 +88,9 @@ void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
   {
     for (auto& Triangle : Face.Triangles)
     {
-      Triangle.V0 = Table[Triangle.V0];
-      Triangle.V1 = Table[Triangle.V1];
-      Triangle.V2 = Table[Triangle.V2];
+      Triangle.V0 = Table[Triangle.V0.GetIndex()];
+      Triangle.V1 = Table[Triangle.V1.GetIndex()];
+      Triangle.V2 = Table[Triangle.V2.GetIndex()];
     }
   }
 }

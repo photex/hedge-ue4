@@ -95,7 +95,7 @@ bool FHedgeKernelTriangleTest::RunTest(const FString& Parameters)
 
   TestEqual(TEXT("Unexpected number of points"), Kernel->NumPoints(), 3);
   TestEqual(TEXT("Unexpected number of edges"), Kernel->NumEdges(), 6);
-  TestEqual(TEXT("Unexpected number of vertices"), Kernel->NumVertices(), 3);
+  TestEqual(TEXT("Unexpected number of vertices"), Kernel->NumVertices(), 6);
   TestEqual(TEXT("Unexpected number of faces"), Kernel->NumFaces(), 1);
 
   TestTrue(TEXT("P0 was missing vertex0 index"), P0.Vertices.Contains(VIndex0));
@@ -208,7 +208,7 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   TestEqual(TEXT("NumPoints == 3"), Kernel->NumPoints(), 3);
   TestEqual(TEXT("NumEdges == 3"), Kernel->NumEdges(), 6);
   TestEqual(TEXT("NumFaces == 1"), Kernel->NumFaces(), 1);
-  TestEqual(TEXT("NumVertices == 3"), Kernel->NumVertices(), 3);
+  TestEqual(TEXT("NumVertices == 3"), Kernel->NumVertices(), 6);
 
   Kernel->Defrag();
 

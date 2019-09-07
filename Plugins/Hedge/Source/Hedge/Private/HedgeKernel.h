@@ -7,14 +7,10 @@
 #include "HedgeElements.h"
 #include "HedgeKernel.generated.h"
 
-
-template<typename ElementIndexType>
-using TRemapTable = TMap<ElementIndexType, ElementIndexType>;
-
-using FPointRemapTable = TRemapTable<FPointHandle>;
-using FVertexRemapTable = TRemapTable<FVertexHandle>;
-using FEdgeRemapTable = TRemapTable<FEdgeHandle>;
-using FFaceRemapTable = TRemapTable<FFaceHandle>;
+using FPointRemapTable = TSparseArray<FPointHandle>;
+using FVertexRemapTable = TSparseArray<FVertexHandle>;
+using FEdgeRemapTable = TSparseArray<FEdgeHandle>;
+using FFaceRemapTable = TSparseArray<FFaceHandle>;
 
 struct FRemapData
 {
@@ -100,22 +96,18 @@ public:
   // Using the same approach as the MeshDescription module because that
   // is just a heck of a lot easier than the stuff I did before when
   // trying to just reuse the container and sort/swap elements around.
-  void Defrag(TRemapTable<ElementHandleType>& OutRemapTable)
+  void Defrag(TSparseArray<ElementHandleType>& OutRemapTable)
   {
-    auto PreviousGeneration = Generation;
     ++Generation;
 
     OutRemapTable.Empty(Elements.GetMaxIndex());
-    OutRemapTable.Add(ElementHandleType(), ElementHandleType());
 
     TSparseArray<ElementType> NewBuffer;
     for (typename TSparseArray<ElementType>::TIterator It( Elements ); It; ++It)
     {
       uint32 const PreviousIndex = It.GetIndex();
       uint32 const NewIndex = NewBuffer.Add(MoveTemp(*It));
-      OutRemapTable.Add(
-        ElementHandleType(PreviousIndex, PreviousGeneration), 
-        ElementHandleType(NewIndex, Generation));
+      OutRemapTable.Insert(PreviousIndex, ElementHandleType(NewIndex, Generation));
     }
     Elements = MoveTemp(NewBuffer);
   }
@@ -218,8 +210,8 @@ public:
    * @returns The index of the first edge.
    */
   FEdgeHandle MakeEdgePair(
-    FEdgeHandle PreviousEdgeHandle, 
-    FPointHandle PointHandle, 
+    FEdgeHandle PreviousEdgeHandle,
+    FPointHandle PointHandle,
     FFaceHandle FaceHandle = FFaceHandle::Invalid);
 
   /**

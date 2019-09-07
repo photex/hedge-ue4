@@ -1,5 +1,7 @@
 /CMakeLists.txt
 /.idea
+/.p4config
+/.p4ignore
 # why clion, why.
 /cmake-build-*
 /Content/
