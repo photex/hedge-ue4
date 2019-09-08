@@ -140,10 +140,7 @@ class UHedgeKernel final : public UObject
   THedgeElementBuffer<FFace, FFaceHandle> Faces;
   THedgeElementBuffer<FPoint, FPointHandle> Points;
 
-  void RemapPoints(FPointRemapTable const& Table);
-  void RemapEdges(FEdgeRemapTable const& Table);
-  void RemapFaces(FFaceRemapTable const& Table);
-  void RemapVertices(FVertexRemapTable const& Table);
+  void RemapElements(FRemapData const& RemapData);
 
   void NewEdgePair(FEdgeHandle& OutEdge0, FEdgeHandle& OutEdge1);
 

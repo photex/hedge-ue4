@@ -4,97 +4,6 @@
 #include "HedgeLogging.h"
 #include "HedgeProxies.h"
 
-
-void UHedgeKernel::RemapPoints(FPointRemapTable const& Table)
-{
-  for (auto& Vertex : Vertices.Elements)
-  {
-    if (Vertex.Point)
-    {
-      Vertex.Point = Table[Vertex.Point.GetIndex()];
-    }
-  }
-}
-
-void UHedgeKernel::RemapEdges(FEdgeRemapTable const& Table)
-{
-  for (auto& Vertex : Vertices.Elements)
-  {
-    if (Vertex.Edge)
-    {
-      Vertex.Edge = Table[Vertex.Edge.GetIndex()];
-    }
-  }
-
-  for (auto& Edge : Edges.Elements)
-  {
-    if (Edge.NextEdge)
-    {
-      Edge.NextEdge = Table[Edge.NextEdge.GetIndex()];
-    }
-
-    if (Edge.PrevEdge)
-    {
-      Edge.PrevEdge = Table[Edge.PrevEdge.GetIndex()];
-    }
-
-    if (Edge.AdjacentEdge)
-    {
-      Edge.AdjacentEdge = Table[Edge.AdjacentEdge.GetIndex()];
-    }
-  }
-
-  for (auto& Face : Faces.Elements)
-  {
-    if (Face.RootEdge)
-    {
-      Face.RootEdge = Table[Face.RootEdge.GetIndex()];
-    }
-  }
-}
-
-void UHedgeKernel::RemapFaces(FFaceRemapTable const& Table)
-{
-  for (auto& Edge : Edges.Elements)
-  {
-    if (Edge.Face)
-    {
-      Edge.Face = Table[Edge.Face.GetIndex()];
-    }
-  }
-}
-
-void UHedgeKernel::RemapVertices(FVertexRemapTable const& Table)
-{
-  for (auto& Point : Points.Elements)
-  {
-    TSet<FVertexHandle> NewVertexSet;
-    for (auto const& VertexHandle : Point.Vertices)
-    {
-      NewVertexSet.Add(Table[VertexHandle.GetIndex()]);
-    }
-    Point.Vertices = MoveTemp(NewVertexSet);
-  }
-
-  for (auto& Edge : Edges.Elements)
-  {
-    if (Edge.Vertex)
-    {
-      Edge.Vertex = Table[Edge.Vertex.GetIndex()];
-    }
-  }
-
-  for (auto& Face : Faces.Elements)
-  {
-    for (auto& Triangle : Face.Triangles)
-    {
-      Triangle.V0 = Table[Triangle.V0.GetIndex()];
-      Triangle.V1 = Table[Triangle.V1.GetIndex()];
-      Triangle.V2 = Table[Triangle.V2.GetIndex()];
-    }
-  }
-}
-
 bool UHedgeKernel::IsValidHandle(FEdgeHandle const Handle) const
 {
   return Edges.IsValidHandle(Handle);
@@ -363,10 +272,47 @@ void UHedgeKernel::Defrag()
   Faces.Defrag(RemapData.Faces);
   Edges.Defrag(RemapData.Edges);
 
-  RemapEdges(RemapData.Edges);
-  RemapFaces(RemapData.Faces);
-  RemapVertices(RemapData.Vertices);
-  RemapPoints(RemapData.Points);
+  RemapElements(RemapData);
+}
+
+void UHedgeKernel::RemapElements(FRemapData const& RemapData)
+{
+  for (auto& Point : Points.Elements)
+  {
+    FVertexSet NewSet;
+    for (auto VertexHandle : Point.Vertices)
+    {
+      NewSet.Add(RemapData.Vertices[VertexHandle.GetIndex()]);
+    }
+    check(NewSet.Num() == Point.Vertices.Num());
+    Point.Vertices = MoveTemp(NewSet);
+  }
+
+  for (auto& Vertex : Vertices.Elements)
+  {
+    Vertex.Edge = RemapData.Edges[Vertex.Edge.GetIndex()];
+    Vertex.Point = RemapData.Points[Vertex.Point.GetIndex()];
+  }
+
+  for (auto& Face : Faces.Elements)
+  {
+    Face.RootEdge = RemapData.Edges[Face.RootEdge.GetIndex()];
+    for (auto& Triangle : Face.Triangles)
+    {
+      Triangle.V0 = RemapData.Vertices[Triangle.V0.GetIndex()];
+      Triangle.V1 = RemapData.Vertices[Triangle.V1.GetIndex()];
+      Triangle.V2 = RemapData.Vertices[Triangle.V2.GetIndex()];
+    }
+  }
+
+  for (auto& Edge : Edges.Elements)
+  {
+    Edge.NextEdge = RemapData.Edges[Edge.NextEdge.GetIndex()];
+    Edge.PrevEdge = RemapData.Edges[Edge.PrevEdge.GetIndex()];
+    Edge.AdjacentEdge = RemapData.Edges[Edge.AdjacentEdge.GetIndex()];
+    Edge.Vertex = RemapData.Vertices[Edge.Vertex.GetIndex()];
+    Edge.Face = RemapData.Faces[Edge.Face.GetIndex()];
+  }
 }
 
 FVertexHandle UHedgeKernel::MakeVertex(
@@ -505,7 +451,7 @@ void UHedgeKernel::ConnectEdges(FEdgeHandle const A, FEdgeHandle const B)
   // that it's clear to me this function should not be handling it.
 }
 
-void UHedgeKernel::SetVertexPoint(FVertexHandle VertexHandle, FPointHandle PointHandle)
+void UHedgeKernel::SetVertexPoint(FVertexHandle const VertexHandle, FPointHandle const PointHandle)
 {
   auto& Vert = Get(VertexHandle);
   auto& Point = Get(PointHandle);

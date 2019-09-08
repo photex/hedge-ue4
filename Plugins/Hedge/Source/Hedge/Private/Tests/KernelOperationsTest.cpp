@@ -206,9 +206,9 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   Kernel->SetVertexPoint(VIndex2, PIndex2);
 
   TestEqual(TEXT("NumPoints == 3"), Kernel->NumPoints(), 3);
-  TestEqual(TEXT("NumEdges == 3"), Kernel->NumEdges(), 6);
+  TestEqual(TEXT("NumEdges == 6"), Kernel->NumEdges(), 6);
   TestEqual(TEXT("NumFaces == 1"), Kernel->NumFaces(), 1);
-  TestEqual(TEXT("NumVertices == 3"), Kernel->NumVertices(), 6);
+  TestEqual(TEXT("NumVertices == 6"), Kernel->NumVertices(), 6);
 
   Kernel->Defrag();
 
@@ -217,7 +217,7 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   // value.
 
   TestFalse(TEXT("PIndex0 is still valid."), Kernel->IsValidHandle(PIndex0));
-  TestFalse(TEXT("PIndex1 is still valid."), Kernel->IsValidHandle(PIndex1)); 
+  TestFalse(TEXT("PIndex1 is still valid."), Kernel->IsValidHandle(PIndex1));
   TestFalse(TEXT("PIndex2 is still valid."), Kernel->IsValidHandle(PIndex2));
 
   TestFalse(TEXT("FIndex0 is still valid."), Kernel->IsValidHandle(FIndex0));
@@ -236,7 +236,7 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   TestTrue(TEXT("Updated PIndex2 is valid."), Kernel->IsValidHandle(PIndex2));
 
   // Check that we get the expected position from PIndex2
-  FVector PIndex2Position = Kernel->Get(PIndex2).Position;
+  FVector const PIndex2Position = Kernel->Get(PIndex2).Position;
   TestEqual(TEXT("PIndex2.Position.X == 0.5f"), PIndex2Position.X, 0.5f);
   TestEqual(TEXT("PIndex2.Position.Y == 0.0f"), PIndex2Position.Y, 0.0f);
   TestEqual(TEXT("PIndex2.Position.Z == 0.0f"), PIndex2Position.Z, 0.0f);
@@ -244,21 +244,21 @@ bool FHedgeKernelDefragTest::RunTest(const FString& Parameters)
   // Check that our edges have indexes with the current generation
   uint32 const ExpectedGeneration = 2;
   EIndex0 = FEdgeHandle(0, ExpectedGeneration);
-  EIndex1 = FEdgeHandle(1, ExpectedGeneration);
+  EIndex1 = FEdgeHandle(2, ExpectedGeneration);
   auto& Edge0 = Kernel->Get(EIndex0);
   auto& Edge1 = Kernel->Get(EIndex1);
-  TestEqual(TEXT("Edge0.NextEdgeIndex.Generation == 2"), 
+  TestEqual(TEXT("Edge0.NextEdgeIndex.Generation == 2"),
     Edge0.NextEdge.GetGeneration(), ExpectedGeneration);
-  TestEqual(TEXT("Edge1.PrevEdgeIndex.Generation == 2"), 
+  TestEqual(TEXT("Edge1.PrevEdgeIndex.Generation == 2"),
     Edge1.PrevEdge.GetGeneration(), ExpectedGeneration);
   TestTrue(TEXT("Edge0.NextEdgeIndex == EIndex1"), Edge0.NextEdge == EIndex1);
   TestTrue(TEXT("Edge1.PrevEdgeIndex == EIndex0"), Edge1.PrevEdge == EIndex0);
 
   // Our mesh stats shouldn't have changed
   TestEqual(TEXT("NumPoints == 3"), Kernel->NumPoints(), 3);
-  TestEqual(TEXT("NumEdges == 3"), Kernel->NumEdges(), 6);
+  TestEqual(TEXT("NumEdges == 6"), Kernel->NumEdges(), 6);
   TestEqual(TEXT("NumFaces == 1"), Kernel->NumFaces(), 1);
-  TestEqual(TEXT("NumVertices == 3"), Kernel->NumVertices(), 3);
+  TestEqual(TEXT("NumVertices == 6"), Kernel->NumVertices(), 6);
 
   return true;
 }
