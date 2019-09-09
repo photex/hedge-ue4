@@ -81,7 +81,7 @@ struct FElementHandle
   bool operator==(FElementHandle const& Other) const
   {
     bool const bIndexMatches = Index == Other.Index;
-    bool const bTestGeneration = Generation != HEDGE_IGNORED_GENERATION &&
+    bool const bTestGeneration = Generation != HEDGE_IGNORED_GENERATION ||
       Other.Generation != HEDGE_IGNORED_GENERATION;
 
     if (bTestGeneration)
