@@ -6,7 +6,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-// Smoke test to ensure our desired behavior for element handles
+// Smoke test to validate our desired behavior for element handles
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
   FHedgeElementHandleTests, "Hedge.ElementHandles",
   EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::SmokeFilter

@@ -32,6 +32,90 @@ struct FHedgeMeshStats
 };
 
 /**
+ * @todo: docs
+ */
+template<typename ElementHandleType, typename ProxyType>
+class THedgeElementIterator
+{
+  explicit THedgeElementIterator(UHedgeKernel* Kernel, ElementHandleType Handle)
+    : CurrentHandle(Handle)
+    , Kernel(Kernel)
+  {
+    if (Kernel && !Kernel->IsValidHandle(CurrentHandle))
+    {
+      FindNextValidHandle();
+    }
+  }
+
+  THedgeElementIterator()
+    : CurrentHandle()
+    , Kernel(nullptr)
+  {}
+
+public:
+  friend class UHedgeMesh;
+
+  THedgeElementIterator operator++()
+  {
+    if (CurrentHandle)
+    {
+      FindNextValidHandle();
+    }
+    return *this;
+  }
+
+  ProxyType operator*() const
+  {
+    return ProxyType(Kernel, CurrentHandle);
+  }
+
+  bool operator!=(THedgeElementIterator const& Other) const
+  {
+    return CurrentHandle != Other.CurrentHandle;
+  }
+
+private:
+  void FindNextValidHandle()
+  {
+    ++CurrentHandle.Index;
+    while(!Kernel->IsValidHandle(CurrentHandle))
+    {
+      ++CurrentHandle.Index;
+    }
+  }
+  ElementHandleType CurrentHandle;
+  UHedgeKernel* Kernel;
+};
+
+template<typename ElementHandleType, typename ElementProxyType>
+struct THedgeElementRangeAdaptor
+{
+  using FIterator = THedgeElementIterator<ElementHandleType, ElementProxyType>;
+
+  FIterator begin()
+  {
+    ElementHandleType InitialHandle;
+    if (Kernel->Num<ElementProxyType::ProxiedType>() > 0)
+    {
+      InitialHandle = ElementHandleType(0);
+    }
+    return FIterator(Kernel, InitialHandle);
+  }
+
+  FIterator end()
+  {
+    return FIterator();
+  }
+
+  explicit THedgeElementRangeAdaptor(UHedgeKernel* Kernel)
+    : Kernel(Kernel)
+  {}
+
+private:
+  UHedgeKernel* Kernel;
+};
+
+/**
  * This is the "high level" interface for building and modifying hedge
  * meshes.
  *
@@ -39,7 +123,7 @@ struct FHedgeMeshStats
  * facilities needed for a modeling tool
  */
 UCLASS()
-class UHedgeMesh : public UObject
+class UHedgeMesh final : public UObject
 {
   GENERATED_BODY()
 
@@ -47,13 +131,23 @@ class UHedgeMesh : public UObject
   UHedgeKernel* Kernel;
 
 public:
+  using FFaceIterator = THedgeElementIterator<FFaceHandle, FPxFace>;
+  using FFaceRangeIterator = THedgeElementRangeAdaptor<FFaceHandle, FPxFace>;
+
   UHedgeMesh();
 
   void GetStats(FHedgeMeshStats& OutStats) const;
 
+  FPxFace Face(uint32 Index) const;
   FPxFace Face(FFaceHandle const& Handle) const;
+
+  FPxHalfEdge Edge(uint32 Index) const;
   FPxHalfEdge Edge(FEdgeHandle const& Handle) const;
+
+  FPxPoint Point(uint32 Index) const;
   FPxPoint Point(FPointHandle const& Handle) const;
+
+  FPxVertex Vertex(uint32 Index) const;
   FPxVertex Vertex(FVertexHandle const& Handle) const;
 
   /**
@@ -75,6 +169,7 @@ public:
    * @note: It is assumed that the points are specified in the correct winding order.
    */
   FFaceHandle AddFace(TArray<FPointHandle> const& Points);
+
   /**
    * Given an edge and an array of points; create all required mesh elements and create
    * a new face extending from the specified edge.
@@ -86,13 +181,17 @@ public:
    *        also has a valid point.
    */
   FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, TArray<FPointHandle> const& Points);
+
   /**
    * Given an edge and an array of points; Create all required mesh elements to
    * create a new face (triangle) extending from the specified edge.
    *
    * @note: It is assumed that the specified edge is a suitable boundary edge to form the face.
    */
-  FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, FPointHandle const& PointIndex);
+  FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, FPointHandle const& PointHandle);
+
+  FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, FVector Position);
+
   /**
    * Given a list of edges; Connect each edge and create a new face.
    *

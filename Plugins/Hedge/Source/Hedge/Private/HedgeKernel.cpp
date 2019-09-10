@@ -259,9 +259,21 @@ uint32 UHedgeKernel::NumFaces() const
   return Faces.Num();
 }
 
+template<>
+uint32 UHedgeKernel::Num<FFace>() const
+{
+  return NumFaces();
+}
+
 uint32 UHedgeKernel::NumEdges() const
 {
   return Edges.Num();
+}
+
+template <>
+uint32 UHedgeKernel::Num<FHalfEdge>() const
+{
+  return NumEdges();
 }
 
 void UHedgeKernel::Defrag()

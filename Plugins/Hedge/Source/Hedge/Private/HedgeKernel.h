@@ -146,47 +146,50 @@ class UHedgeKernel final : public UObject
 
 public:
 
-  bool IsValidHandle(FEdgeHandle Handle) const;
-  bool IsValidHandle(FFaceHandle Handle) const;
-  bool IsValidHandle(FVertexHandle Handle) const;
-  bool IsValidHandle(FPointHandle Handle) const;
+  HEDGE_API bool IsValidHandle(FEdgeHandle Handle) const;
+  HEDGE_API bool IsValidHandle(FFaceHandle Handle) const;
+  HEDGE_API bool IsValidHandle(FVertexHandle Handle) const;
+  HEDGE_API bool IsValidHandle(FPointHandle Handle) const;
 
-  FHalfEdge& Get(FEdgeHandle Handle);
-  FFace& Get(FFaceHandle Handle);
-  FVertex& Get(FVertexHandle Handle);
-  FPoint& Get(FPointHandle Handle);
+  HEDGE_API FHalfEdge& Get(FEdgeHandle Handle);
+  HEDGE_API FFace& Get(FFaceHandle Handle);
+  HEDGE_API FVertex& Get(FVertexHandle Handle);
+  HEDGE_API FPoint& Get(FPointHandle Handle);
 
-  FHalfEdge& New(FEdgeHandle& OutHandle);
-  FFace& New(FFaceHandle& OutHandle);
-  FVertex& New(FVertexHandle& OutHandle);
-  FPoint& New(FPointHandle& OutHandle);
-  FPoint& New(FPointHandle& OutHandle, FVector Position);
+  HEDGE_API FHalfEdge& New(FEdgeHandle& OutHandle);
+  HEDGE_API FFace& New(FFaceHandle& OutHandle);
+  HEDGE_API FVertex& New(FVertexHandle& OutHandle);
+  HEDGE_API FPoint& New(FPointHandle& OutHandle);
+  HEDGE_API FPoint& New(FPointHandle& OutHandle, FVector Position);
 
-  FEdgeHandle Add(FHalfEdge&& Edge);
-  FFaceHandle Add(FFace&& Face);
-  FVertexHandle Add(FVertex&& Vertex);
-  FPointHandle Add(FPoint&& Point);
+  HEDGE_API FEdgeHandle Add(FHalfEdge&& Edge);
+  HEDGE_API FFaceHandle Add(FFace&& Face);
+  HEDGE_API FVertexHandle Add(FVertex&& Vertex);
+  HEDGE_API FPointHandle Add(FPoint&& Point);
 
-  void Remove(FEdgeHandle Handle);
-  void Remove(FFaceHandle Handle);
-  void Remove(FVertexHandle Handle);
-  void Remove(FPointHandle Handle);
+  HEDGE_API void Remove(FEdgeHandle Handle);
+  HEDGE_API void Remove(FFaceHandle Handle);
+  HEDGE_API void Remove(FVertexHandle Handle);
+  HEDGE_API void Remove(FPointHandle Handle);
 
-  uint32 NumPoints() const;
-  uint32 NumVertices() const;
-  uint32 NumFaces() const;
-  uint32 NumEdges() const;
+  HEDGE_API uint32 NumPoints() const;
+  HEDGE_API uint32 NumVertices() const;
+  HEDGE_API uint32 NumFaces() const;
+  HEDGE_API uint32 NumEdges() const;
+
+  template<typename ElementType>
+  HEDGE_API uint32 Num() const;
 
   /**
    * Reorganize all element buffers into contiguous arrays
    * and updates indices on related elements.
    */
-  void Defrag();
+  HEDGE_API void Defrag();
 
   /**
    * @todo: documentssss
    */
-  FVertexHandle MakeVertex(
+  HEDGE_API FVertexHandle MakeVertex(
     FPointHandle PointHandle = FPointHandle::Invalid,
     FEdgeHandle EdgeHandle = FEdgeHandle::Invalid);
 
@@ -195,7 +198,7 @@ public:
    * the first edge with the specified face.
    * @returns The index of the first edge.
    */
-  FEdgeHandle MakeEdgePair(
+  HEDGE_API FEdgeHandle MakeEdgePair(
     FPointHandle Point0Handle,
     FPointHandle Point1Handle,
     FFaceHandle FaceHandle = FFaceHandle::Invalid);
@@ -206,7 +209,7 @@ public:
    *
    * @returns The index of the first edge.
    */
-  FEdgeHandle MakeEdgePair(
+  HEDGE_API FEdgeHandle MakeEdgePair(
     FEdgeHandle PreviousEdgeHandle,
     FPointHandle PointHandle,
     FFaceHandle FaceHandle = FFaceHandle::Invalid);
@@ -217,7 +220,7 @@ public:
    *
    * @returns The index of the first edge.
    */
-  FEdgeHandle MakeEdgePair(
+  HEDGE_API FEdgeHandle MakeEdgePair(
     FEdgeHandle PreviousEdgeHandle,
     FEdgeHandle NextEdgeHandle,
     FFaceHandle FaceHandle = FFaceHandle::Invalid);
@@ -225,7 +228,7 @@ public:
   /**
    * This creates a pair of half edges without any point associations.
    */
-  FEdgeHandle MakeEdgePair(FFaceHandle FaceHandle = FFaceHandle::Invalid);
+  HEDGE_API FEdgeHandle MakeEdgePair(FFaceHandle FaceHandle = FFaceHandle::Invalid);
 
   /**
    * Assigns all the connected edges to the specified face and assigns
@@ -234,7 +237,7 @@ public:
    * @param FaceHandle: The face to assign and update.
    * @param RootEdgeHandle: The first edge of a loop which forms the face
    */
-  void SetFace(FFaceHandle FaceHandle, FEdgeHandle RootEdgeHandle);
+  HEDGE_API void SetFace(FFaceHandle FaceHandle, FEdgeHandle RootEdgeHandle);
 
   /**
    * Connect the two edges specified via the vertex of the second edge.
@@ -244,9 +247,10 @@ public:
    * @param A: HalfEdge which should point to B as 'next'
    * @param B: HalfEdge which should point to A as 'previous'
    */
-  void ConnectEdges(FEdgeHandle A, FEdgeHandle B);
+  HEDGE_API void ConnectEdges(FEdgeHandle A, FEdgeHandle B);
 
-  void SetVertexPoint(FVertexHandle VertexHandle, FPointHandle PointHandle);
-  void SetVertexEdge(FVertexHandle VertexHandle, FEdgeHandle EdgeHandle);
+  HEDGE_API void SetVertexPoint(FVertexHandle VertexHandle, FPointHandle PointHandle);
+  HEDGE_API void SetVertexEdge(FVertexHandle VertexHandle, FEdgeHandle EdgeHandle);
 };
+
 

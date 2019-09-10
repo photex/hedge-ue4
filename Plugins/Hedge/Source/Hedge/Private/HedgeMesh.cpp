@@ -6,6 +6,7 @@
 #include "HedgeProxies.h"
 #include "HedgeLogging.h"
 
+
 UHedgeMesh::UHedgeMesh()
   : Kernel(nullptr)
 {
@@ -20,9 +21,19 @@ void UHedgeMesh::GetStats(FHedgeMeshStats& OutStats) const
   OutStats.NumFaces = Kernel->NumFaces();
 }
 
+FPxFace UHedgeMesh::Face(uint32 const Index) const
+{
+  return Face(FFaceHandle(Index));
+}
+
 FPxFace UHedgeMesh::Face(FFaceHandle const& Handle) const
 {
   return FPxFace(Kernel, Handle);
+}
+
+FPxHalfEdge UHedgeMesh::Edge(uint32 const Index) const
+{
+  return Edge(FEdgeHandle(Index));
 }
 
 FPxHalfEdge UHedgeMesh::Edge(FEdgeHandle const& Handle) const
@@ -30,9 +41,19 @@ FPxHalfEdge UHedgeMesh::Edge(FEdgeHandle const& Handle) const
   return FPxHalfEdge(Kernel, Handle);
 }
 
+FPxPoint UHedgeMesh::Point(uint32 const Index) const
+{
+  return Point(FPointHandle(Index));
+}
+
 FPxPoint UHedgeMesh::Point(FPointHandle const& Handle) const
 {
   return FPxPoint(Kernel, Handle);
+}
+
+FPxVertex UHedgeMesh::Vertex(uint32 const Index) const
+{
+  return Vertex(FVertexHandle(Index));
 }
 
 FPxVertex UHedgeMesh::Vertex(FVertexHandle const& Handle) const
@@ -111,7 +132,7 @@ FFaceHandle UHedgeMesh::AddFace(
 
 FFaceHandle UHedgeMesh::AddFace(
   FEdgeHandle const& RootEdgeHandle, 
-  FPointHandle const& P1)
+  FPointHandle const& PointHandle)
 {
   FFaceHandle FaceHandle;
   FFace& Face = Kernel->New(FaceHandle);
@@ -120,10 +141,17 @@ FFaceHandle UHedgeMesh::AddFace(
   auto& Edge0 = Kernel->Get(RootEdgeHandle);
   Edge0.Face = FaceHandle;
 
-  auto const Edge1 = Kernel->MakeEdgePair(RootEdgeHandle, P1, FaceHandle);
+  auto const Edge1 = Kernel->MakeEdgePair(RootEdgeHandle, PointHandle, FaceHandle);
   Kernel->MakeEdgePair(Edge1, RootEdgeHandle, FaceHandle);
 
   return FaceHandle;
+}
+
+FFaceHandle UHedgeMesh::AddFace(FEdgeHandle const& RootEdgeHandle, FVector const Position)
+{
+  FPointHandle PointHandle;
+  Kernel->New(PointHandle, Position);
+  return AddFace(RootEdgeHandle, PointHandle);
 }
 
 FFaceHandle UHedgeMesh::AddFace(TArray<FEdgeHandle> const& Edges)

@@ -18,6 +18,9 @@ struct FPxPoint;
 template <typename ElementHandleType, typename ElementType>
 struct FPxElement
 {
+  using ProxiedType = ElementType;
+  using ProxiedHandleType = ElementHandleType;
+
   explicit FPxElement(UHedgeKernel* Kernel, ElementHandleType Handle) noexcept
     : Kernel(Kernel)
     , Handle(Handle)

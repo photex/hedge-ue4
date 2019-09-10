@@ -39,6 +39,9 @@ struct FElementHandle
 {
   GENERATED_BODY()
 
+  template<typename, typename>
+  friend class THedgeElementIterator;
+
   explicit FElementHandle() noexcept
     : Index(HEDGE_INVALID_INDEX)
     , Generation(HEDGE_IGNORED_GENERATION)
