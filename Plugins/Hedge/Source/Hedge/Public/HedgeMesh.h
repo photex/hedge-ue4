@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "HedgeTypes.h"
+#include "HedgeKernel.h"
 #include "HedgeMesh.generated.h"
 
 struct FPxHalfEdge;
@@ -11,7 +12,6 @@ struct FPxFace;
 struct FPxVertex;
 struct FPxPoint;
 
-class UHedgeKernel;
 class UHedgeMesh;
 
 
@@ -34,10 +34,11 @@ struct FHedgeMeshStats
 /**
  * @todo: docs
  */
-template<typename ElementHandleType, typename ProxyType>
+template<typename ProxyType>
 class THedgeElementIterator
 {
-  explicit THedgeElementIterator(UHedgeKernel* Kernel, ElementHandleType Handle)
+  using FHandle = typename ProxyType::ProxiedHandleType;
+  explicit THedgeElementIterator(UHedgeKernel* Kernel, FHandle Handle)
     : CurrentHandle(Handle)
     , Kernel(Kernel)
   {
@@ -54,6 +55,8 @@ class THedgeElementIterator
 
 public:
   friend class UHedgeMesh;
+  template<typename>
+  friend struct THedgeElementRangeAdaptor;
 
   THedgeElementIterator operator++()
   {
@@ -77,27 +80,34 @@ public:
 private:
   void FindNextValidHandle()
   {
+    auto const ElementCount = Kernel->Num<typename ProxyType::ProxiedType>();
     ++CurrentHandle.Index;
-    while(!Kernel->IsValidHandle(CurrentHandle))
+    while(CurrentHandle.Index < ElementCount 
+      && !Kernel->IsValidHandle(CurrentHandle))
     {
       ++CurrentHandle.Index;
     }
+    if (CurrentHandle.Index >= ElementCount)
+    {
+      CurrentHandle = FHandle();
+    }
   }
-  ElementHandleType CurrentHandle;
+  FHandle CurrentHandle;
   UHedgeKernel* Kernel;
 };
 
-template<typename ElementHandleType, typename ElementProxyType>
+template<typename ElementProxyType>
 struct THedgeElementRangeAdaptor
 {
-  using FIterator = THedgeElementIterator<ElementHandleType, ElementProxyType>;
+  using FHandle = typename ElementProxyType::ProxiedHandleType;
+  using FIterator = THedgeElementIterator<ElementProxyType>;
 
   FIterator begin()
   {
-    ElementHandleType InitialHandle;
-    if (Kernel->Num<ElementProxyType::ProxiedType>() > 0)
+    FHandle InitialHandle;
+    if (Kernel->Num<typename ElementProxyType::ProxiedType>() > 0)
     {
-      InitialHandle = ElementHandleType(0);
+      InitialHandle = FHandle(0);
     }
     return FIterator(Kernel, InitialHandle);
   }
@@ -131,24 +141,33 @@ class UHedgeMesh final : public UObject
   UHedgeKernel* Kernel;
 
 public:
-  using FFaceIterator = THedgeElementIterator<FFaceHandle, FPxFace>;
-  using FFaceRangeIterator = THedgeElementRangeAdaptor<FFaceHandle, FPxFace>;
+  using FFaceRangeIterator = THedgeElementRangeAdaptor<FPxFace>;
+  using FHalfEdgeRangeIterator = THedgeElementRangeAdaptor<FPxHalfEdge>;
+  using FVertexRangeIterator = THedgeElementRangeAdaptor<FPxVertex>;
+  using FPointRangeIterator = THedgeElementRangeAdaptor<FPxPoint>;
 
   UHedgeMesh();
 
   void GetStats(FHedgeMeshStats& OutStats) const;
 
+  /// Perhaps just an escape-hatch for an incomplete mesh API? :shrug:
+  UHedgeKernel* GetKernel() const;
+
   FPxFace Face(uint32 Index) const;
   FPxFace Face(FFaceHandle const& Handle) const;
+  FFaceRangeIterator Faces() const;
 
   FPxHalfEdge Edge(uint32 Index) const;
   FPxHalfEdge Edge(FEdgeHandle const& Handle) const;
+  FHalfEdgeRangeIterator Edges() const;
 
   FPxPoint Point(uint32 Index) const;
   FPxPoint Point(FPointHandle const& Handle) const;
+  FPointRangeIterator Points() const;
 
   FPxVertex Vertex(uint32 Index) const;
   FPxVertex Vertex(FVertexHandle const& Handle) const;
+  FVertexRangeIterator Vertices() const;
 
   /**
    * Given an array of positions, new points are added to the mesh.
@@ -169,6 +188,8 @@ public:
    * @note: It is assumed that the points are specified in the correct winding order.
    */
   FFaceHandle AddFace(TArray<FPointHandle> const& Points);
+
+  FFaceHandle AddFace(FPointHandle const Points[], uint32 PointCount);
 
   /**
    * Given an edge and an array of points; create all required mesh elements and create
@@ -192,6 +213,8 @@ public:
 
   FFaceHandle AddFace(FEdgeHandle const& RootEdgeHandle, FVector Position);
 
+  FFaceHandle AddFace(TArray<FEdgeHandle> const& Edges, TArray<FPointHandle> const& Points);
+
   /**
    * Given a list of edges; Connect each edge and create a new face.
    *
@@ -199,6 +222,13 @@ public:
    *        can be connected to form a face.
    */
   FFaceHandle AddFace(TArray<FEdgeHandle> const& Edges);
+
+  FFaceHandle AddFace(FEdgeHandle const Edges[], uint32 EdgeCount);
+
+  /**
+   * @todo docs
+   */
+  FFaceHandle AddFace(FEdgeHandle const& RootEdge);
 
   /**
    * Removes the specified edge, and associated elements.

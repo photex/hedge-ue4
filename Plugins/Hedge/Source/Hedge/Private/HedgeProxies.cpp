@@ -3,6 +3,7 @@
 #include "HedgeProxies.h"
 #include "HedgeKernel.h"
 #include "HedgeElements.h"
+#include "HedgeLogging.h"
 
 FPxVertex FPxHalfEdge::Vertex() const
 {
@@ -75,6 +76,28 @@ FPxHalfEdge FPxFace::RootEdge() const
 {
   auto& Face = GetElement();
   return FPxHalfEdge(Kernel, Face.RootEdge);
+}
+
+TArray<FPxHalfEdge> FPxFace::GetPerimeterEdges() const
+{
+  TArray<FPxHalfEdge> Edges = { RootEdge() };
+
+  auto const Root = Edges[0].GetHandle();
+  auto CurrentEdge = Edges[0].Next();
+  while(CurrentEdge.GetHandle() != Root)
+  {
+    Edges.Add(CurrentEdge);
+    auto NextEdge = CurrentEdge.Next();
+    if (NextEdge == CurrentEdge)
+    {
+      ErrorLogV("Edge %s is directly connected to itself!", 
+        *(CurrentEdge.GetHandle()).ToString());
+      break;
+    }
+    CurrentEdge = NextEdge;
+  }
+
+  return MoveTemp(Edges);
 }
 
 FPxHalfEdge FPxVertex::Edge() const

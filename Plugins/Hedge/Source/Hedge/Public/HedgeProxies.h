@@ -52,7 +52,7 @@ struct FPxElement
     return Kernel->Get(Handle);
   }
 
-  FORCEINLINE ElementHandleType GetHandle()
+  FORCEINLINE ElementHandleType GetHandle() const
   {
     return Handle;
   }
@@ -91,6 +91,8 @@ struct FPxFace : FPxElement<FFaceHandle, FFace>
   using FPxElement::FPxElement;
 
   FPxHalfEdge RootEdge() const;
+
+  TArray<FPxHalfEdge> GetPerimeterEdges() const;
 };
 
 /**

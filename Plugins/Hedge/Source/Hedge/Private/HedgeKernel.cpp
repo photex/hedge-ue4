@@ -249,9 +249,21 @@ uint32 UHedgeKernel::NumPoints() const
   return Points.Num();
 }
 
+template<>
+uint32 UHedgeKernel::Num<FPoint>() const
+{
+  return NumPoints();
+}
+
 uint32 UHedgeKernel::NumVertices() const
 {
   return Vertices.Num();
+}
+
+template<>
+uint32 UHedgeKernel::Num<FVertex>() const
+{
+  return NumVertices();
 }
 
 uint32 UHedgeKernel::NumFaces() const

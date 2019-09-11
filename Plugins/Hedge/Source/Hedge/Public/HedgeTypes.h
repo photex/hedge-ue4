@@ -39,7 +39,7 @@ struct FElementHandle
 {
   GENERATED_BODY()
 
-  template<typename, typename>
+  template<typename>
   friend class THedgeElementIterator;
 
   explicit FElementHandle() noexcept
@@ -112,8 +112,8 @@ struct FElementHandle
   FString ToString() const
   {
     return (Index == HEDGE_INVALID_INDEX)
-             ? TEXT("Invalid")
-             : FString::Printf(TEXT("%d"), Index);
+             ? TEXT("<<Invalid>>")
+             : FString::Printf(TEXT("[%d]"), Index);
   }
 
   friend FArchive& operator<<(FArchive& Ar, FElementHandle& Element)
