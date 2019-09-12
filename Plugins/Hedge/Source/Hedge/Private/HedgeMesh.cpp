@@ -134,7 +134,7 @@ FFaceHandle UHedgeMesh::AddFace(FPointHandle const Points[], uint32 PointCount)
 
     PreviousEdge = CurrentEdge;
   }
-  Kernel->MakeEdgePair(PreviousEdge, RootPoint, FaceHandle);
+  Kernel->MakeEdgePair(PreviousEdge, RootEdge, FaceHandle);
   Face.RootEdge = RootEdge;
   return FaceHandle;
 }
@@ -207,9 +207,10 @@ FFaceHandle UHedgeMesh::AddFace(FEdgeHandle const Edges[], uint32 EdgeCount)
     return FFaceHandle::Invalid;
   }
   FFaceHandle FaceHandle;
-  Kernel->New(FaceHandle);
+  auto& Face = Kernel->New(FaceHandle);
 
   auto const RootEdge = Edges[0];
+  Kernel->Get(RootEdge).Face = FaceHandle;
   auto PreviousEdge = RootEdge;
   for (uint32 i = 1; i < EdgeCount; ++i)
   {
@@ -226,6 +227,8 @@ FFaceHandle UHedgeMesh::AddFace(FEdgeHandle const Edges[], uint32 EdgeCount)
   }
 
   Kernel->ConnectEdges(PreviousEdge, RootEdge);
+
+  Face.RootEdge = RootEdge;
 
   return FaceHandle;
 }

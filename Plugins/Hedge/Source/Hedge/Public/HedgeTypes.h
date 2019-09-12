@@ -48,10 +48,20 @@ struct FElementHandle
   {
   }
 
-  explicit FElementHandle(FElementIndex const Index) noexcept
+  FElementHandle(FElementIndex const Index) noexcept
     : Index(Index)
     , Generation(HEDGE_IGNORED_GENERATION)
   {
+  }
+
+  FElementHandle(int32 const Idx) noexcept
+    : Index(Idx)
+    , Generation(HEDGE_IGNORED_GENERATION)
+  {
+    if (Idx < 0)
+    {
+      Index = HEDGE_INVALID_INDEX;
+    }
   }
 
   explicit FElementHandle(FElementIndex const Index, uint32 const Generation) noexcept
@@ -123,6 +133,11 @@ struct FElementHandle
     return Ar;
   }
 
+  FORCEINLINE friend uint32 GetTypeHash(FElementHandle const& Other)
+  {
+    return GetTypeHash(Other.Index);
+  }
+
 protected:
   FElementIndex Index;
   FElementGeneration Generation;
@@ -134,11 +149,6 @@ struct FEdgeHandle : public FElementHandle
 {
   GENERATED_BODY()
   using FElementHandle::FElementHandle;
-  FORCEINLINE friend uint32 GetTypeHash(FEdgeHandle const& Other)
-  {
-    return GetTypeHash(Other.Index);
-  }
-
   HEDGE_API static const FEdgeHandle Invalid;
 };
 
@@ -148,11 +158,6 @@ struct FFaceHandle : public FElementHandle
 {
   GENERATED_BODY()
   using FElementHandle::FElementHandle;
-  FORCEINLINE friend uint32 GetTypeHash(FFaceHandle const& Other)
-  {
-    return GetTypeHash(Other.Index);
-  }
-
   HEDGE_API static const FFaceHandle Invalid;
 };
 
@@ -162,11 +167,6 @@ struct FVertexHandle : public FElementHandle
 {
   GENERATED_BODY()
   using FElementHandle::FElementHandle;
-  FORCEINLINE friend uint32 GetTypeHash(FVertexHandle const& Other)
-  {
-    return GetTypeHash(Other.Index);
-  }
-
   HEDGE_API static const FVertexHandle Invalid;
 };
 
@@ -176,10 +176,5 @@ struct FPointHandle : public FElementHandle
 {
   GENERATED_BODY()
   using FElementHandle::FElementHandle;
-  FORCEINLINE friend uint32 GetTypeHash(FPointHandle const& Other)
-  {
-    return GetTypeHash(Other.Index);
-  }
-
   HEDGE_API static const FPointHandle Invalid;
 };

@@ -38,22 +38,8 @@ FPxHalfEdge FPxHalfEdge::Adjacent() const
 bool FPxHalfEdge::IsBoundary() const
 {
   auto& Edge = GetElement();
-  if (!Edge.Face)
-  {
-    return true;
-  }
-
-  // *sigh*
-  // If we just called 'IsBoundary' on the adjacent
-  // proxy we recurse into the nothing.
-  // Is this a .. bad .. design?
   auto& AdjacentEdge = Adjacent().GetElement();
-  if (!AdjacentEdge.Face)
-  {
-    return true;
-  }
-
-  return false;
+  return !Edge.Face || !AdjacentEdge.Face;
 }
 
 FHalfEdgePoints FPxHalfEdge::GetPoints() const
